@@ -15,12 +15,14 @@ This is separate from `../single-photo-run` (the full reconstruction by another 
 
 ## Controls
 
-| | Desktop | Quest 3 |
-|---|---|---|
-| Browse | mouse, ↑ ↓ / W S, gamepad d-pad | point a controller (or hand), thumbstick up/down |
-| Select | click, Enter, gamepad A | trigger / pinch |
-| Back | Esc, gamepad B | B / Y, or grip while a card is open |
-| Recenter | n/a | grip |
+| | Desktop | Phone / tablet | Quest 3 |
+|---|---|---|---|
+| Browse | mouse, ↑ ↓ / W S, gamepad d-pad | press and hold to highlight; drag to look around | point a controller (or hand), thumbstick up/down |
+| Select | click, Enter, gamepad A | tap | trigger / pinch |
+| Back | Esc, gamepad B | tap **< BACK** on the card | B / Y, or grip while a card is open |
+| Recenter | n/a | n/a | grip |
+
+On an upright phone the room fills the screen height and every menu item fits on first load; dragging pans sideways (the camera only turns, so the splat stays sharp). Sub-menu cards are held closer and centred on small screens so their lines are about 30 px apart. Phones start at up to 1.5× resolution and step down to 0.75× if the frame rate stays under about 28 fps.
 
 ## What's in the room
 
