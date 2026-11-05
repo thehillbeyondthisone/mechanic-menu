@@ -1,116 +1,43 @@
 <!doctype html>
 <html lang="en">
 <head>
-<meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
-<meta name="theme-color" content="#292721">
-<title>Mechanic Menu Test</title>
-<style>
-  :root { --bg: #1f1d19; --panel: #2b2822; --line: #4a4438; --text: #f1eadb; --muted: #b9ae98; --brass: #d6a75a; --ok: #8fc98a; --bad: #e07a6a; --warn: #e2c26a; }
-  * { box-sizing: border-box; }
-  body { margin: 0; background: var(--bg); color: var(--text); font: 16px/1.5 system-ui, -apple-system, "Segoe UI", sans-serif; }
-  main { max-width: 860px; margin: 0 auto; padding: 24px 16px 48px; }
-  h1 { font-size: 30px; letter-spacing: .04em; margin: 0 0 4px; text-transform: uppercase; }
-  h2 { font-size: 15px; letter-spacing: .12em; text-transform: uppercase; color: var(--brass); margin: 28px 0 10px; }
-  p { margin: 6px 0; } .muted { color: var(--muted); }
-  section { background: var(--panel); border: 1px solid var(--line); border-radius: 10px; padding: 14px 16px; }
-  .launch { display: grid; grid-template-columns: repeat(auto-fit, minmax(190px, 1fr)); gap: 10px; }
-  .launch a { display: block; padding: 14px 16px; border-radius: 8px; border: 1px solid var(--line); background: #35312a; color: var(--text); text-decoration: none; }
-  .launch a strong { display: block; font-size: 17px; } .launch a span { color: var(--muted); font-size: 13px; }
-  .launch a.primary { background: var(--brass); color: #1f1d19; border-color: var(--brass); } .launch a.primary span { color: #3b2f1c; }
-  .launch a:focus-visible, button:focus-visible { outline: 3px solid var(--text); outline-offset: 2px; }
-  table { width: 100%; border-collapse: collapse; font-size: 14px; } td { padding: 6px 4px; border-top: 1px solid var(--line); vertical-align: top; }
-  tr:first-child td { border-top: 0; } td:last-child { text-align: right; white-space: nowrap; }
-  .ok { color: var(--ok); } .bad { color: var(--bad); } .warn { color: var(--warn); }
-  label { display: flex; gap: 10px; align-items: flex-start; padding: 8px 0; border-top: 1px solid var(--line); cursor: pointer; }
-  label:first-of-type { border-top: 0; } input[type=checkbox] { width: 22px; height: 22px; margin-top: 1px; accent-color: var(--brass); flex: none; }
-  textarea { width: 100%; min-height: 70px; background: #1f1d19; color: var(--text); border: 1px solid var(--line); border-radius: 6px; padding: 8px; font: inherit; }
-  button { font: inherit; padding: 10px 16px; border-radius: 8px; border: 1px solid var(--brass); background: transparent; color: var(--brass); cursor: pointer; }
-  .row { display: flex; gap: 10px; flex-wrap: wrap; align-items: center; margin-top: 10px; }
-  code { background: #1f1d19; padding: 1px 5px; border-radius: 4px; }
-</style>
+  <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta name="theme-color" content="#292721"><title>Mechanic Menu — test bench</title>
+  <link rel="stylesheet" href="./test-hub/test-hub.css">
+  <script type="module" src="./test-hub/test-hub.js"></script>
 </head>
-<body>
-<main>
-  <h1>Mechanic Menu</h1>
-  <p class="muted">Test page for the 3D sign menu inside the repair-office Gaussian splat. <span id="build"></span></p>
-
-  <h2>Open the menu</h2>
-  <div class="launch">
-    <a class="primary" href="./"><strong>Open menu</strong><span>Full scene on desktop, lighter scene on Quest</span></a>
-    <a href="./?scene=full"><strong>Full scene</strong><span>3.1M splats, 49 MB</span></a>
-    <a href="./?scene=reduced"><strong>Light scene</strong><span>300K splats, 4.7 MB (Quest default)</span></a>
-    <a href="./?still"><strong>No motion</strong><span>Signs don't drop, sway or flicker</span></a>
-  </div>
-  <p class="muted" style="margin-top:10px">Quest: open this page in Quest Browser, tap <strong>Open menu</strong>, wait for the room, then press <strong>Enter VR</strong>. Point a controller at a word and pull the trigger.</p>
-
-  <h2>This browser</h2>
-  <section><table id="env"></table></section>
-
-  <h2>Scene files</h2>
-  <section><table id="files"></table></section>
-
-  <h2>Headset checklist</h2>
-  <section id="checklist">
-    <label><input type="checkbox" data-k="surround"> The room surrounds me (floor below, walls and ceiling all round); no empty space past the photo's edges</label>
-    <label><input type="checkbox" data-k="scale"> The room feels close and life-size, not far away</label>
-    <label><input type="checkbox" data-k="upright"> The room is level and upright in both eyes</label>
-    <label><input type="checkbox" data-k="read"> START, CONTINUE and SETTINGS are easy to read</label>
-    <label><input type="checkbox" data-k="select"> Each word lights up amber when pointed at, and the trigger selects it</label>
-    <label><input type="checkbox" data-k="settings"> Settings: sound, quality, recenter and Exit VR all respond; BACK returns</label>
-    <label><input type="checkbox" data-k="stick"> Signs stay on their wall, counter and ceiling when I move my head</label>
-    <label><input type="checkbox" data-k="smooth"> Smooth, no stutter or uncomfortable jumps</label>
-    <p class="muted" style="margin-top:10px">Notes (what looked wrong, where):</p>
-    <textarea id="notes" placeholder="e.g. behind me looks smeared; SETTINGS hard to read"></textarea>
-    <div class="row"><button id="copy">Copy results</button><span id="copied" class="muted" aria-live="polite"></span></div>
+<body><main>
+  <header><p class="eyebrow">Mechanic Menu</p><h1>Test bench</h1><p>Room variants, renderers and quality comparisons in one place.</p><p id="build" class="muted" role="status">Checking this deployment…</p></header>
+  <section aria-labelledby="configure"><h2 id="configure">Choose a test</h2>
+    <form id="config"><div class="fields">
+      <label>Test mode<select id="mode" name="mode"></select></label>
+      <label>Photo scene<select id="scene" name="scene"><option value="auto">Automatic for this device</option><option value="full">Full — 3.14M splats</option><option value="reduced">Light — 300K splats</option></select></label>
+      <label>Surround<select id="surround" name="surround"><option value="splat">Generated splat + painted shell</option><option value="flat">Painted shell only (v0.6 comparison)</option></select></label>
+      <label>LOD budget<select id="budget" name="budget"><option value="393024">393K</option><option value="800000">800K</option><option value="1200000" selected>1.2M</option><option value="2000000">2M</option><option value="3200000">Full / 3.2M</option></select></label>
+    </div><div class="toggles"><label><input type="checkbox" id="still">Still signs</label><label><input type="checkbox" id="legacy">Legacy forward camera (diagnostic)</label></div>
+    <p id="mode-note" class="muted"></p><p id="availability" role="status"></p>
+    <div class="actions"><a id="launch" class="primary" href="./">Open selected test</a><button type="button" id="copy-link">Copy test link</button></div>
+    <output id="selected-url"></output><p id="link-status" class="muted" role="status"></p></form>
   </section>
-</main>
-<script>
-  const $ = id => document.getElementById(id);
-  const row = (table, label, value, cls = '') => { const tr = table.insertRow(); tr.insertCell().textContent = label; const td = tr.insertCell(); td.textContent = value; if (cls) td.className = cls; return td; };
-  const env = $('env'), results = {};
-  function note(label, value, cls) { results[label] = value; return row(env, label, value, cls); }
-  note('Secure page (needed for VR)', isSecureContext ? 'yes' : 'no', isSecureContext ? 'ok' : 'bad');
-  const gl = document.createElement('canvas').getContext('webgl2');
-  note('WebGL 2', gl ? 'yes' : 'no', gl ? 'ok' : 'bad');
-  if (gl) { const info = gl.getExtension('WEBGL_debug_renderer_info'); note('GPU', info ? gl.getParameter(info.UNMASKED_RENDERER_WEBGL) : 'hidden by browser'); }
-  const headset = /Quest|Oculus/i.test(navigator.userAgent);
-  note('Device', headset ? 'Meta Quest browser' : /Android|iPhone|iPad/i.test(navigator.userAgent) ? 'phone or tablet' : 'desktop');
-  const vr = note('Immersive VR', 'checking...');
-  if (!navigator.xr) { vr.textContent = 'not available in this browser'; vr.className = 'warn'; results['Immersive VR'] = vr.textContent; }
-  else navigator.xr.isSessionSupported('immersive-vr').then(ok => { vr.textContent = ok ? 'supported' : 'no headset found'; vr.className = ok ? 'ok' : 'warn'; results['Immersive VR'] = vr.textContent; }).catch(e => { vr.textContent = 'error: ' + e.message; vr.className = 'bad'; });
-  note('Screen', `${screen.width}x${screen.height} @${devicePixelRatio}x`);
-
-  const files = [['app.js', 'Menu app'], ['assets/type-meshes.json', '3D sign letters'], ['assets/room-shell.json', 'Room shell geometry'],
-    ['assets/room-shell.jpg', 'Room shell texture'], ['assets/room-env.jpg', 'Reflection map'],
-    ['assets/office.compressed.ply', 'Light scene'], ['assets/office-full.compressed.ply', 'Full scene']];
-  const ft = $('files');
-  for (const [path, label] of files) {
-    const cell = row(ft, `${label} (${path})`, 'checking...');
-    fetch(path, {method: 'HEAD', cache: 'no-store'}).then(r => {
-      const size = Number(r.headers.get('content-length'));
-      cell.textContent = r.ok ? (size ? `ok, ${size >= 1048576 ? (size / 1048576).toFixed(1) + ' MB' : Math.max(1, Math.round(size / 1024)) + ' KB'} download` : 'ok') : `HTTP ${r.status}`; cell.className = r.ok ? 'ok' : 'bad';
-      results[label] = cell.textContent;
-    }).catch(e => { cell.textContent = 'unreachable'; cell.className = 'bad'; results[label] = 'unreachable'; });
-  }
-  fetch('build-info.json', {cache: 'no-store'}).then(r => r.ok ? r.json() : null).then(info => {
-    if (info) { $('build').textContent = `Build ${info.version}, ${info.commit.slice(0, 7)}, ${info.built}.`; results.build = $('build').textContent; }
-  }).catch(() => {});
-
-  // Checklist answers are remembered on this device only.
-  const KEY = 'mechanic-menu-checklist';
-  let saved = {}; try { saved = JSON.parse(localStorage.getItem(KEY)) || {}; } catch {}
-  const boxes = [...document.querySelectorAll('#checklist input')];
-  for (const box of boxes) { box.checked = !!saved[box.dataset.k]; box.onchange = store; }
-  $('notes').value = saved.notes || ''; $('notes').oninput = store;
-  function store() { const s = {notes: $('notes').value}; for (const b of boxes) s[b.dataset.k] = b.checked; try { localStorage.setItem(KEY, JSON.stringify(s)); } catch {} }
-  $('copy').onclick = async () => {
-    const lines = ['Mechanic Menu test', results.build || '', ...boxes.map(b => `${b.checked ? '[x]' : '[ ]'} ${b.parentElement.textContent.trim()}`),
-      'Notes: ' + ($('notes').value || '-'), ...Object.entries(results).filter(([k]) => k !== 'build').map(([k, v]) => `${k}: ${v}`)].filter(Boolean);
-    const text = lines.join('\n');
-    try { await navigator.clipboard.writeText(text); $('copied').textContent = 'Copied.'; }
-    catch { $('notes').value += '\n\n' + text; $('copied').textContent = 'Clipboard blocked: results added to the notes box.'; }
-  };
-</script>
-</body>
-</html>
+  <section aria-labelledby="presets"><h2 id="presets">All launch options</h2><div id="preset-list"></div></section>
+  <section aria-labelledby="inside"><h2 id="inside">Inside the menu</h2><dl>
+    <dt>Start</dt><dd>Opens the prototype room view. No game is connected.</dd>
+    <dt>Continue</dt><dd>Shows that no saved game exists.</dd>
+    <dt>Settings</dt><dd>Sound on/off; Performance, Balanced and Detail resolution; recenter; Back; Exit VR while in VR. Resolution changes do not select another splat file.</dd>
+  </dl><p class="muted">Desktop: click a 3D word, drag to look, R to recenter, Escape to go back. Quest: Enter VR, point a controller and pull the trigger. Outside the original photo, the surrounding shop is generated content. The scene works best near its standing viewpoint.</p></section>
+  <section aria-labelledby="browser"><h2 id="browser">This browser</h2><table><tbody id="environment"></tbody></table></section>
+  <section aria-labelledby="assets"><h2 id="assets">Available files</h2><p class="muted">Checks file presence and download size without downloading the scene. Presence does not prove visual quality or headset performance.</p><table><tbody id="files"></tbody></table></section>
+  <section aria-labelledby="history"><h2 id="history">Earlier work</h2><p>v0.1 cards, v0.2–0.3 floating typography, v0.4 physical signs, v0.5 fitted room shell, v0.6 generated painted surround, and v0.7 generated surround splat.</p><p class="muted">The early sources and evidence are archived locally. They are not separate playable versions on this deployment. The streamed menu snapshot predates the current room transform and generated surround; use it to test streaming, not to judge the latest menu layout.</p></section>
+  <section aria-labelledby="headset"><h2 id="headset">Headset check — selected test</h2><p class="muted">Answers and notes stay in this browser. Nothing is sent automatically. A saved check is your observation, not an automated pass.</p><div id="checklist">
+    <label><input type="checkbox" data-check="coverage">Floor, walls and ceiling cover the view without empty borders.</label>
+    <label><input type="checkbox" data-check="scale">Room scale and distance feel comfortable.</label>
+    <label><input type="checkbox" data-check="stereo">Both eyes render, and the room is upright.</label>
+    <label><input type="checkbox" data-check="legibility">Start, Continue, Settings and settings choices are readable.</label>
+    <label><input type="checkbox" data-check="controllers">Both controllers highlight and select the intended words.</label>
+    <label><input type="checkbox" data-check="settings">Sound, quality, recenter, Back and Exit VR respond.</label>
+    <label><input type="checkbox" data-check="anchoring">Signs stay fixed in the room during head movement.</label>
+    <label><input type="checkbox" data-check="smoothness">Sustained motion is smooth; no uncomfortable LOD popping or shimmer.</label>
+  </div><label for="notes">Notes</label><textarea id="notes" placeholder="Tested device, what looked wrong, and where…"></textarea>
+  <div class="actions"><button type="button" id="copy-results">Copy results</button><span id="result-status" role="status"></span></div><textarea id="result-fallback" aria-label="Results to copy" hidden readonly></textarea></section>
+  <footer>Desktop checks do not establish Quest comfort, controller correctness or sustained headset performance. Compare the same camera, resolution and budget.</footer>
+</main></body></html>
