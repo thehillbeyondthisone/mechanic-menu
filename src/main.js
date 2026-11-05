@@ -15,7 +15,7 @@ const cameraZ = review.get('camera') === 'legacy' ? -0.45 : 0;
 const withSurround = !review.has('flat');   // ?flat shows only the photo splat and the painted room shell
 const reduceMotion = review.has('still') || matchMedia('(prefers-reduced-motion: reduce)').matches;
 const state = { ready: false, view: 'menu', hovered: null, fps: 0, xr: false, xrAvailable: false, lastAction: null, errors: [], settings, reflections: false, roomDim: 0 };
-window.officeDemo = { state, version: '0.7.0', sceneCount, frame: SHELL_REPORT };
+window.officeDemo = { state, version: '0.8.0', sceneCount, frame: SHELL_REPORT };
 addEventListener('error', event => state.errors.push(event.message));
 addEventListener('unhandledrejection', event => state.errors.push(String(event.reason)));
 $('retry').onclick = () => location.reload();
@@ -192,7 +192,7 @@ async function boot() {
       uniform float uRoomDim;
       void modifySplatColor(vec2 gaussianUV, inout vec4 color) {
         float grey = dot(color.rgb, vec3(0.299, 0.587, 0.114));
-        color.rgb = mix(color.rgb, vec3(grey), 0.35 * uRoomDim) * (1.0 - 0.42 * uRoomDim);
+        color.rgb = mix(color.rgb, vec3(grey), 0.1 * uRoomDim) * (1.0 - 0.15 * uRoomDim);
       }`);
     material.setParameter('uRoomDim', 0);
     material.update();
@@ -414,7 +414,7 @@ async function boot() {
     const dim = reduceMotion ? roomDimTarget : ease(state.roomDim, roomDimTarget, 3.5, dt);
     if (Math.abs(dim - state.roomDim) > 1e-4) {
       if (splatMaterial) { splatMaterial.setParameter('uRoomDim', dim); splatMaterial.update(); }
-      if (shellMaterial) { const k = 1 - 0.42 * dim; shellMaterial.emissive.set(k, k * 0.98, k * 0.95); shellMaterial.update(); }
+      if (shellMaterial) { const k = 1 - 0.15 * dim; shellMaterial.emissive.set(k, k * 0.98, k * 0.95); shellMaterial.update(); }
     }
     state.roomDim = Math.abs(dim - roomDimTarget) < 1e-3 ? roomDimTarget : dim;
   }
