@@ -9,7 +9,7 @@ On a Quest, open either link in Quest Browser, wait for the room to load, then p
 
 ## What's in the scene
 
-The office is a single-image reconstruction. One photo was lifted to 3D Gaussians with depth from Depth Anything 3. The photo covers only about 60 degrees of view. A room shell (floor, ceiling and walls fitted to the depth) surrounds the viewer, textured with the photo where it saw the room and a soft mirrored continuation beyond, so there's no empty space past the photo's edges. Everything outside the photo's view is invented, not measured.
+The office is a single-image reconstruction. One photo was lifted to 3D Gaussians with depth from Depth Anything 3. The photo covers only about 60 degrees of view. A room shell (floor, ceiling and walls fitted to the depth) surrounds the viewer. It's textured with the photo where the photo saw the room. Everywhere else it uses a 360-degree shop panorama generated locally with SDXL inpainting (`scripts/outpaint_surround.py`): shelving behind you, a workbench and poster wall to the left, and a fluorescent ceiling. So there's no empty space past the photo's edges. Everything outside the photo's view is invented by the model, not measured.
 
 `src/room-frame.js` corrects the reconstruction's unequal focal lengths to square pixels, levels the room from its ceiling, and sets scale from a 1.4 m handheld eye height. A CRT monitor in the scene comes out about 35 cm wide.
 
@@ -34,6 +34,7 @@ For a Quest over USB (developer mode, USB debugging allowed), run `Start-Office.
 | `src/room-frame.js` | Generated room transform (from `scripts/make_room_shell.py`) |
 | `scripts/bake-type.mjs` | Bakes the 3D letters with Three.js `TextGeometry` at build time |
 | `scripts/make_room_shell.py` | Fits the room surfaces and bakes the shell texture (needs the source depth map, not included) |
+| `scripts/outpaint_surround.py` | Generates the surround panorama the shell samples (`--surround`); needs the source photo and a local SDXL inpainting model, not included |
 | `public/assets/` | Scene (compressed PLY, full and 300K), letters, shell and reflection map |
 
 Licences: the Anton font is under the SIL Open Font License (`public/FONT-LICENSE.txt`), and PlayCanvas is MIT.
