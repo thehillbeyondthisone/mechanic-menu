@@ -1,0 +1,50 @@
+{
+  "photo": {
+    "width": 1536,
+    "height": 2048,
+    "focal_px": 1250.0
+  },
+  "camera": {
+    "position": [
+      0,
+      1.3633227609181504,
+      0
+    ],
+    "fov_y_deg": 78.64866836349435,
+    "aspect": 0.75,
+    "world_from_cam_rows": [
+      [
+        0.9977900775859724,
+        0.06644517342124304,
+        -1.734723475976807e-18
+      ],
+      [
+        0.0657276673119079,
+        -0.9870154729060631,
+        -0.14656169347328019
+      ],
+      [
+        -0.009738317139743165,
+        0.1462378035018357,
+        -0.9892015315426095
+      ]
+    ],
+    "note": "cam frame: x right, y down, z forward. world = rows @ cam * unit_to_m, then +eye_h on y"
+  },
+  "unit_to_m": 2.4,
+  "eye_height_m": 1.3633227609181504,
+  "depth_grid": {
+    "file": "depth-grid.bin",
+    "width": 192,
+    "height": 256,
+    "units": "metres along camera z"
+  },
+  "counts": {
+    "total": 1713028,
+    "layer0_0": 50698,
+    "layer0_1": 289306,
+    "layer0_2": 1177336,
+    "layer1_3": 167012,
+    "layer2_4": 28676
+  }
+}
