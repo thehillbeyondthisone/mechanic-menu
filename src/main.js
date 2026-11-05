@@ -12,9 +12,10 @@ const headsetBrowser = /Quest|Oculus|Android/i.test(navigator.userAgent);
 const fullScene = review.get('scene') === 'full' || (review.get('scene') !== 'reduced' && !headsetBrowser);
 const sceneCount = fullScene ? 3144197 : 300000;
 const cameraZ = review.get('camera') === 'legacy' ? -0.45 : 0;
+const withSurround = !review.has('flat');   // ?flat shows only the photo splat and the painted room shell
 const reduceMotion = review.has('still') || matchMedia('(prefers-reduced-motion: reduce)').matches;
 const state = { ready: false, view: 'menu', hovered: null, fps: 0, xr: false, xrAvailable: false, lastAction: null, errors: [], settings, reflections: false, roomDim: 0 };
-window.officeDemo = { state, version: '0.5.0', sceneCount, frame: SHELL_REPORT };
+window.officeDemo = { state, version: '0.7.0', sceneCount, frame: SHELL_REPORT };
 addEventListener('error', event => state.errors.push(event.message));
 addEventListener('unhandledrejection', event => state.errors.push(String(event.reason)));
 $('retry').onclick = () => location.reload();
@@ -66,6 +67,8 @@ async function boot() {
   const office = new pc.Entity('Repair office splat'); content.addChild(office);
   // Corrected frame from scripts/make_room_shell.py: square-pixel shape, levelled, metric (1.4 m eye).
   office.setLocalRotation(new pc.Quat(...OFFICE.rotation)); office.setLocalScale(...OFFICE.scale); office.setLocalPosition(...OFFICE.position);
+  // Generated views of the rest of the shop, lifted to Gaussians in room metres (scripts/lift_surround.py).
+  const surround = new pc.Entity('Generated surround splat'); content.addChild(surround);
   // Key light from the ceiling strip light, slightly in front; soft fill from the viewer's left.
   const light = new pc.Entity('Strip light'); content.addChild(light);
   light.addComponent('light', {type: 'directional', color: new pc.Color(1, 0.97, 0.9), intensity: 0.9, castShadows: false});
@@ -120,14 +123,23 @@ async function boot() {
   asset.on('progress', (received, total) => {
     if (total) { $('progress').value = received / total * 100; $('load-message').textContent = `Loading office... ${Math.round(received / total * 100)}%`; }
   });
+  // Optional: without it the flat room shell still surrounds the viewer.
+  const surroundAsset = withSurround && new pc.Asset('Generated surround', 'gsplat', {url: fullScene ? './assets/surround-full.compressed.ply' : './assets/surround.compressed.ply'});
+  const surroundLoaded = !surroundAsset ? Promise.resolve(false) : new Promise(resolve => {
+    app.assets.add(surroundAsset);
+    surroundAsset.once('load', () => resolve(true)); surroundAsset.once('error', error => {console.warn('Surround splat unavailable', error); resolve(false);});
+    app.assets.load(surroundAsset);
+  });
   app.start();
-  const [baked, shellData] = await Promise.all([
+  const [baked, shellData, , , hasSurround] = await Promise.all([
     fetch('./assets/type-meshes.json').then(response => {if (!response.ok) throw Error('Missing 3D typography'); return response.json();}),
     roomShellData(),
     new Promise((resolve, reject) => {asset.once('load', resolve); asset.once('error', reject); app.assets.load(asset);}),
     roomReflections(),
+    surroundLoaded,
   ]);
   office.addComponent('gsplat', {asset});
+  if (hasSurround) surround.addComponent('gsplat', {asset: surroundAsset});
   const splatMaterial = dimmableSplats();
   const shellMaterial = roomShell(shellData);
 
@@ -419,7 +431,7 @@ async function boot() {
     if (drag && event.buttons === 0) drag = null;
     if (drag) {
       const dx = event.clientX - drag.x, dy = event.clientY - drag.y; drag.moved += Math.abs(dx) + Math.abs(dy);
-      if (drag.moved > 5) {yaw = pc.math.clamp(yaw - dx * 0.08, -6, 6); pitch = pc.math.clamp(pitch - dy * 0.08, -5, 5); camera.setLocalEulerAngles(pitch, yaw, 0);}
+      if (drag.moved > 5) {yaw = (yaw - dx * 0.15) % 360; pitch = pc.math.clamp(pitch - dy * 0.15, -80, 80); camera.setLocalEulerAngles(pitch, yaw, 0);}
       drag.x = event.clientX; drag.y = event.clientY;
     }
     const ray = pointerRay(event); hover(pick(ray.origin, ray.direction)?.word);

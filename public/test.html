@@ -41,8 +41,9 @@
     <a href="./?scene=full"><strong>Full scene</strong><span>3.1M splats, 49 MB</span></a>
     <a href="./?scene=reduced"><strong>Light scene</strong><span>300K splats, 4.7 MB (Quest default)</span></a>
     <a href="./?still"><strong>No motion</strong><span>Signs don't drop, sway or flicker</span></a>
+    <a href="./?flat"><strong>Without generated splat</strong><span>Photo splat + painted walls only (v0.6), to compare</span></a>
   </div>
-  <p class="muted" style="margin-top:10px">Quest: open this page in Quest Browser, tap <strong>Open menu</strong>, wait for the room, then press <strong>Enter VR</strong>. Point a controller at a word and pull the trigger.</p>
+  <p class="muted" style="margin-top:10px">Quest: open this page in Quest Browser, tap <strong>Open menu</strong>, wait for the room, then press <strong>Enter VR</strong>. Point a controller at a word and pull the trigger. Desktop: drag to look all the way round, press R to face the menu again.</p>
 
   <h2>This browser</h2>
   <section><table id="env"></table></section>
@@ -83,7 +84,8 @@
 
   const files = [['app.js', 'Menu app'], ['assets/type-meshes.json', '3D sign letters'], ['assets/room-shell.json', 'Room shell geometry'],
     ['assets/room-shell.jpg', 'Room shell texture'], ['assets/room-env.jpg', 'Reflection map'],
-    ['assets/office.compressed.ply', 'Light scene'], ['assets/office-full.compressed.ply', 'Full scene']];
+    ['assets/office.compressed.ply', 'Light scene'], ['assets/office-full.compressed.ply', 'Full scene'],
+    ['assets/surround.compressed.ply', 'Generated surround, light'], ['assets/surround-full.compressed.ply', 'Generated surround, full']];
   const ft = $('files');
   for (const [path, label] of files) {
     const cell = row(ft, `${label} (${path})`, 'checking...');
