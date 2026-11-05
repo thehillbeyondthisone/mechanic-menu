@@ -89,7 +89,7 @@
     const cell = row(ft, `${label} (${path})`, 'checking...');
     fetch(path, {method: 'HEAD', cache: 'no-store'}).then(r => {
       const size = Number(r.headers.get('content-length'));
-      cell.textContent = r.ok ? (size ? `${(size / 1048576).toFixed(2)} MB` : 'ok') : `HTTP ${r.status}`; cell.className = r.ok ? 'ok' : 'bad';
+      cell.textContent = r.ok ? (size ? `ok, ${size >= 1048576 ? (size / 1048576).toFixed(1) + ' MB' : Math.max(1, Math.round(size / 1024)) + ' KB'} download` : 'ok') : `HTTP ${r.status}`; cell.className = r.ok ? 'ok' : 'bad';
       results[label] = cell.textContent;
     }).catch(e => { cell.textContent = 'unreachable'; cell.className = 'bad'; results[label] = 'unreachable'; });
   }
