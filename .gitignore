@@ -1,8 +1,16 @@
+# local HTTPS certificate + private key (generated per machine by tools/serve.py)
+cert/
+
+# installed libraries (npm install in viewer/)
 node_modules/
-dist/
-evidence/
-work/
-certs/
+
+# large exports: rebuild with tools/build_splat.py (high PLY is over GitHub's 100 MB limit)
+export/*.ply
+
+# intermediate build files; keep only what build_splat.py needs to run without DA3
+build/*
+!build/depth-model-res.npy
+!build/depth-meta.json
+
 __pycache__/
-*.log
-*.pid
+*.pyc

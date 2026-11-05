@@ -1,81 +1,69 @@
-# Repair Office - private spatial menu, v0.8.0
+# Patterson: single-image Gaussian splat menu
 
-Start with [HANDOFF.md](HANDOFF.md) for a copyable new-session prompt, paths, user direction, design details and current limits. The project is stored on Harbinger independently of the chat. No off-machine backup has been verified, and nothing has been published or uploaded.
+One photo (`source/patterson.jpg`, the original 1536×2048 file) lifted into a 3D Gaussian splat, presented as an interactive game menu. The menu typography is built from splats and placed on real surfaces in the room. Runs in desktop browsers and on Quest 3 (WebXR).
 
-## Launch
+This is separate from `../single-photo-run` (the full reconstruction by another agent). Nothing there was changed.
 
-Double-click `Start-Office.cmd`, then open the local URL printed by the server on Harbinger (normally **http://127.0.0.1:8840/**; a free port is chosen when occupied). Keep the server window open; close it or press Ctrl+C to stop. The runtime is already built in `dist/` and requires Node.js, not an internet connection. The server binds only to loopback by default.
+## Open it
 
-## Current design and controls
+- **Online (desktop and Quest 3):** https://thehillbeyondthisone.github.io/mechanic-menu/. Open it in the Quest Browser and press ENTER VR, with no certificate step. Redeploy the `gh-pages` branch with `python -B tools/make_site.py <gh-pages checkout>`.
+- **First time on a new machine:** run `npm install` in `viewer/` (installs Spark and three.js).
+- **Desktop:** double-click `Open-Single-Image-Splat.bat`. It opens http://127.0.0.1:8765/
+- **Quest 3:** with the server running, open the Quest Browser on the same Wi-Fi and go to the `quest 3:` address printed in the server window (currently `https://192.168.1.168:8766/`). Accept the certificate warning once (Advanced → Proceed), then press **ENTER VR**. If Windows Firewall asks about Python, allow it on private networks.
+- **Hosted (desktop):** https://claude.ai/artifact/GGV2eT5KreGDa1QCoasvK2. It's private until shared from its Share menu. VR may not be offered inside claude.ai, so use the LAN address for the headset. Rebuild the hosted copy with `python -B tools/make_artifact.py <out_dir>`. That script splits the splat into base64 text parts, because the host only serves text and data files.
+- Add `?tier=high` or `?tier=quest` to force a detail level. The Quest Browser picks `quest` automatically.
 
-The office fills the initial desktop frame. The menu is built into the room as physical sign letters (Anton, deep bevelled returns): START hangs from the ceiling on a raceway and cables, CONTINUE stands on the counter, SETTINGS is mounted on the left poster wall with a soft shadow. The settings list is a wall directory beside it, and BACK stands on the counter. Selectable words are ivory enamel on brass and light up amber when hovered or pointed at; red enamel words are labels only. The room dims while the menu is open and returns to full brightness on START. Add `?still` to the URL to turn off sign motion (reduced-motion settings do this too). There are no cards, title panels, slogans, sidebars, numbered labels, or duplicated visible HTML menus.
+## Controls
 
-Sign positions are in `src/layout.js`, fitted to the reconstruction's depth map. To regenerate assets: `python scripts/ttf_to_typeface.py` (font conversion), `python scripts/make_room_env.py` (reflection map), then `npm run build`. Current evidence is `evidence/v04-verification.json` and `evidence/v04-*.jpg`.
+| | Desktop | Quest 3 |
+|---|---|---|
+| Browse | mouse, ↑ ↓ / W S, gamepad d-pad | point a controller (or hand), thumbstick up/down |
+| Select | click, Enter, gamepad A | trigger / pinch |
+| Back | Esc, gamepad B | B / Y, or grip while a card is open |
+| Recenter | n/a | grip |
 
-Click a word, or point a Quest controller and pull the trigger. Drag for a small desktop look adjustment; R resets; Escape goes back. The small ? button shows help. Keyboard users can Tab to an accessible menu which becomes visible when focused. Enter VR appears when the browser reports an available immersive device.
+## What's in the room
 
-Start opens the room with a DEMO ONLY label and BACK; it does not launch a real game. Continue shows NO SAVED GAME. Sound and render quality persist in this browser. Settings also offer recenter and, while immersed, Exit VR. No locomotion, automatic drift or teleportation is added.
+| Object | Menu item | Reaction |
+|---|---|---|
+| CRT monitor | **CONTINUE** (green phosphor, scanlines) | loading bar types out, shockwave, push-in |
+| Red label-maker tape, top drawer | **NEW GAME** | room blows apart into dust and reassembles |
+| Black tape, middle drawer | **LOAD GAME** | drawer slides open, a typed index card flies out |
+| Blue tape, bottom drawer | **OPTIONS** | same card: flicker, depth of field, pointer light, quality |
+| Yellow floor stencil | **QUIT** | room dissolves; "Thanks for stopping by"; select to return |
+| Enamel sign on chains | title | swings when touched or clicked |
 
-The original is a finite single-image depth reconstruction, with no measured scale or unseen surfaces. Desktop framing crops into that view. XR keeps native headset projection and tracking; a physical Quest test is still required for stereo, field of view, comfort, selection and performance.
+Always running: hovered objects get a warm light in the room, the drawers ease out under hover (the photographed drawer fronts actually move), the pointer acts as a flashlight with a soft ripple where it hits the room, the fluorescent tube flickers now and then, and dust drifts through the window light.
 
-## Private Quest delivery
+## Files
 
-**2026-11-05: the USB route below works with the owner's Quest 3** (already in developer mode; project adb at `C:\Users\thefo\OneDrive\Desktop\Gaussian Splat\.tooling\android-sdk\platform-tools\adb.exe`). VR loads at 72 fps on the 300K scene with no errors; see `evidence/v04-verification.json`. Wireless HTTPS is still not set up.
+- `viewer/` is the app (`index.html`, `src/main.js`, `src/effects.js`, `src/typography.js`). It uses Spark 2.3.1 and three.js 0.180.0, installed locally in `viewer/node_modules`.
+- `viewer/public/assets/patterson-high.spz` has 1,713,028 gaussians (17 MB). `patterson-quest.spz` has 454,382 gaussians (4.8 MB).
+- `export/patterson-{high,quest}.ply` are standard 3DGS PLYs for game engines and editors. They are Y-up, in metres, with the floor at y = 0 and the photo camera at (0, 1.36, 0) looking toward −Z.
+- `tools/depth.py` runs Depth Anything 3 BASE (Apache-2.0, reused read-only from the earlier BLUNT run on D:) with a mirrored second pass.
+- `tools/build_splat.py` builds the splat from photo plus depth. `tools/serve.py` is the local HTTP/HTTPS server.
 
-With the headset plugged in and `Start-Office.cmd` running, double-click `Connect-Quest.cmd`: it forwards the port over USB and opens the page in Quest Browser. Run it again after re-plugging or waking the headset.
+## How the splat is built
 
-v0.6.0 surrounds the viewer with a room shell: the photo where it saw the room and a locally generated (SDXL inpainting) shop everywhere else (`python scripts/make_room_shell.py --surround <panorama>`, then `npm run build`); see HANDOFF.md. Generated areas are invented, not measured. v0.7.0 lifts those generated views into a second Gaussian splat (`scripts/lift_surround.py`), so the rest of the shop has depth; drag to look all round on desktop, `?flat` for the old painted shell. v0.8.0 sharpens the generated views (Real-ESRGAN, `scripts/sharpen_surround.py`) and trains them into one splat in LichtFeld Studio (`scripts/prepare_training.py`, MCMC strategy).
+1. DA3 depth at 1512 px, averaged with a horizontally mirrored pass, then upsampled to the full photo.
+2. Depth discontinuities are snapped to the near or far side, which removes floating "flying pixels".
+3. Adaptive density: one gaussian per pixel where there's detail, and 2×2 or 4×4 cells on flat, plain surfaces.
+4. Each gaussian is a surface-aligned disc sized to its pixel's footprint on the depth surface, so it reproduces the photo exactly from the original viewpoint and holds up at oblique angles.
+5. A hidden background layer fills in behind every foreground edge, so leaning around objects shows plausible wall instead of black holes.
+6. The edges of the photo fade into darkness.
 
-### Wireless (not set up)
+Calibration (in `build_splat.py`): focal length 1250 px (79° vertical field of view). DA3's own camera estimate was inconsistent, so this came from its average guess and the visible ceiling-to-floor span. Scale is 2.4 m per depth unit, so the CRT bezel measures about 40 cm. The camera ends up 1.36 m above the floor, which fits a hand-held photo. Gravity comes from the wall and ceiling planes (about 8° downward pitch).
 
-**No trusted private HTTPS hostname/certificate is configured, so wireless delivery is unavailable.** A plain `http://192.168…` link is not a secure WebXR origin. An HTTPS page loading its scene over HTTP is not a solution either.
+## Limits
 
-### Wireless, no public scene host
+- It's one photo. Anything the camera didn't see (behind objects, outside the frame) is filled in by guesswork. It looks best within about 0.5 m of the original viewpoint. VR recenters you onto that spot when you enter, and grip recenters again.
+- Scale and focal length are estimates, not measurements.
+- Quest 3 frame rate hasn't been measured on a headset yet. If it stutters, the quest tier is the lever (fewer gaussians, or a lower `frameBufferScaleFactor` in `main.js`).
 
-Use a domain you control with a browser-trusted certificate obtained by DNS validation, and private DNS that resolves that hostname to Harbinger's private address. DNS validation does not require exposing this server to the internet. Serve the whole `dist/` directory over that private HTTPS origin, either behind your existing trusted private reverse proxy or with this server:
+## Rebuild
 
-```powershell
-# Replace these with the actual private interface and certificate paths.
-$env:HOST = '<Harbinger-private-IP>'
-$env:PORT = '8840'
-$env:TLS_CERT = 'C:\path\to\fullchain.pem'
-$env:TLS_KEY = 'C:\path\to\privkey.pem'
-npm start
+```bash
+python -B tools/depth.py source/patterson.jpg build 1512   # with the DA3 env python
+python -B tools/build_splat.py source/patterson.jpg build viewer/public/assets high
+python -B tools/build_splat.py source/patterson.jpg build viewer/public/assets quest
 ```
-
-Open `https://<certificate-hostname>:8840/` in Quest Browser on the same private network. Its certificate must validate normally on the headset, and DNS must resolve there too. Keep access limited to the private network through your existing network/firewall controls; do not add internet port forwarding. No certificate, trust store, DNS, firewall, or browser security setting was changed by this task. Do not bypass certificate errors or enable insecure-origin browser flags.
-
-A private VPN HTTPS reverse proxy is another option if the headset already has authorized access to that private network. Tailscale Serve, when already configured, is private to its tailnet; Funnel is a public service and is outside this demo's scope.
-
-### Localhost over USB, for an already configured development headset
-
-If the Quest is already authorized for development and USB debugging with Harbinger, Chrome's `chrome://inspect/#devices` supports forwarding device `localhost:8840` to Harbinger `localhost:8840`. Or, with an existing Android SDK `adb` installation and the intended authorized device selected:
-
-```text
-adb -s <Quest-device-serial> reverse tcp:8840 tcp:8840
-```
-
-Then open **http://localhost:8840/** in Quest Browser. This is the browser's standard loopback secure-context exception, not an insecure-origin override. Traffic stays on the USB connection. Disconnect forwarding afterward with `adb -s <Quest-device-serial> reverse --remove tcp:8840`. No ADB tooling was installed and no device settings were enabled here. If the headset is not already configured for this, use the private HTTPS route or have the owner perform the device setup.
-
-### Headset acceptance pass
-
-Check: the room is upright in both eyes; initial placement works seated and standing; both controllers highlight/select all three cards; Start → Look around → Back works; settings and Exit VR respond; recenter preserves natural head tracking; text is readable; there are no uncomfortable jumps or sustained stutters. Try Balanced first, then Performance. Request is 72 Hz where supported, with a reduced XR framebuffer size; that is a target, not a measured Quest result. Use the displayed FPS as a first signal, then inspect actual headset timings if needed.
-
-## Assets, build and evidence
-
-The preserved original is `D:\Lustron\experiments\BLUNT\2026-11-04_repair-office-single-image\output\repair-office.ply` (3,144,197 splats; SHA-256 `c5751f34df70ab46d236ce825ded01d21004a2f2de776376c7eb3d93afeb1f9a`). Its local derivative is `public/assets/office.compressed.ply`: 300,000 splats, 4,885,044 bytes. Preparation used CPU merge decimation; the original was not overwritten.
-
-PlayCanvas 2.23.3 renders the static splat, meshes and WebXR. Three.js 0.187.0 is used only at build time to bake extruded typography. The pinned font and its notice are in `design/`. `public/assets/type-meshes.json` contains actual caps, bevels, sides and normals. Font and engine notices are copied into the build. No external fonts or CDNs are used at runtime.
-
-Run `npm ci` if dependencies are missing, `npm run build` to bake typography and bundle the static site, and `npm test` for geometry, ray, camera-framing and settings checks. `npm run prepare-scene` recreates the derivative on CPU and is unnecessary for menu edits.
-
-Current quality-recovery evidence is in `evidence/v03-verification.json` and `evidence/v03-*.jpg`. The v02 files describe the degraded version. The earlier `evidence/verification.json`, `menu.jpg`, `settings.jpg`, `room-preview.jpg` and `v01-source/` are retained history from the rejected first design. Do not present them as current screenshots or tests.
-
-For continuing work, read `HANDOFF.md`; for source changes start with `src/main.js`, `src/spatial.js` and `scripts/bake-type.mjs`.
-
-
-## Quality recovery in v0.2.1
-
-Desktop uses `public/assets/office-full.compressed.ply`: all 3,144,197 splats, 51,192,190 bytes (48.82 MiB), converted locally without decimation. The original camera origin is restored; desktop MSAA smooths geometry edges; typography uses a much thinner extrusion and lighter sides. A controlled full-vs-300K comparison recovered fine detail and removed much of the reduced file's grain. Full compressed PLY is quantized and remains a derivative; the original 213.8 MB PLY is preserved.
-
-Use `npm run prepare-full` if the full derivative is missing. `/?scene=full` and `/?scene=reduced` provide the same-camera comparison; `&camera=legacy` selects the previous forward eye offset. Quest/Android still uses the reduced fallback by default until higher counts/LOD have been measured on hardware. Desktop performance and visual improvement are not a Quest acceptance test.
