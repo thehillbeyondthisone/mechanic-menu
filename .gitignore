@@ -1,0 +1,8 @@
+node_modules/
+dist/
+evidence/
+work/
+certs/
+__pycache__/
+*.log
+*.pid
