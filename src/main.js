@@ -7,7 +7,9 @@ import * as T from "./typography.js";
 const V3 = THREE.Vector3;
 const params = new URLSearchParams(location.search);
 const IS_QUEST = isOculus();
-const TIER = params.get("tier") || (IS_QUEST || isMobile() ? "quest" : "high");
+const IS_PHONE = !IS_QUEST && isMobile();
+const TIER = params.get("tier") || (IS_QUEST || IS_PHONE ? "quest" : "high");
+const NO_HOVER = matchMedia("(hover: none)").matches;   // touch-first device
 const ASSETS = new URL("../public/assets/", import.meta.url).href;
 const ui = {
   loading: document.getElementById("loading"), bar: document.getElementById("bar"), pct: document.getElementById("pct"),
@@ -111,7 +113,9 @@ function roomHit(origin, dir, maxDist = 8) {
 
 // ------------------------------------------------------------------ renderer
 const renderer = new THREE.WebGLRenderer({ antialias: false, powerPreference: "high-performance" });
-renderer.setPixelRatio(Math.min(devicePixelRatio, TIER === "quest" ? 1 : 1.5));
+// phones get a sharper start and step down if the frame rate can't keep up (see adaptResolution)
+let pixelRatio = Math.min(devicePixelRatio, IS_PHONE ? 1.5 : TIER === "quest" ? 1 : 1.5);
+renderer.setPixelRatio(pixelRatio);
 renderer.setSize(innerWidth, innerHeight);
 renderer.setClearColor(0x050403, 1);
 document.getElementById("app").appendChild(renderer.domElement);
@@ -340,7 +344,10 @@ function openCard(kind, drawerIndex) {
   state = "card";
   drawerFrames.forEach((d, k) => (d.target = k === drawerIndex ? 0.16 : 0));
   const d = drawerFrames[drawerIndex];
-  const pos = CAM.pos.clone().lerp(d.center, 0.52).add(new V3(-0.08, 0.2, 0));   // ~1 m away, handed out of the drawer
+  let pos = CAM.pos.clone().lerp(d.center, 0.52).add(new V3(-0.08, 0.2, 0));   // ~1 m away, handed out of the drawer
+  // small screens: hold the card closer, in the middle of the view, so its lines are big enough to read and tap
+  const near = !renderer.xr.isPresenting && cardDistance(pos.distanceTo(CAM.pos));
+  if (near) pos = camera.position.clone().addScaledVector(camera.getWorldDirection(new V3()), near);
   const group = new THREE.Group();
   group.position.copy(pos);
   const cardMesh = T.indexCard();
@@ -349,7 +356,8 @@ function openCard(kind, drawerIndex) {
   group.add(cardMesh);
   worldRoot.add(group);
   worldRoot.updateMatrixWorld(true);
-  group.lookAt(worldRoot.localToWorld(CAM.pos.clone()));   // +z faces the photo viewpoint
+  if (near) { group.up.copy(camera.up); group.lookAt(camera.position); }
+  else group.lookAt(worldRoot.localToWorld(CAM.pos.clone()));   // +z faces the photo viewpoint
   const title = kind === "options" ? "OPTIONS" : "LOAD GAME";
   const head = T.typedLine(title, { color: "#8a1c1c" });
   head.objectModifier = cardFx.modifier;
@@ -377,7 +385,7 @@ function openCard(kind, drawerIndex) {
     group.add(g);
     // items are parented to the card group; reparent bookkeeping so worldRoot.add in makeItem doesn't steal them
     const it = makeItem({
-      id: `card-${i}`, group: g, fx: textEffects("ink"), w: 0.28, h: 0.024, layer: "card", order: i,
+      id: `card-${i}`, group: g, fx: textEffects("ink"), w: 0.29, h: 0.026, layer: "card", order: i,
       mesh: T.typedLine(L.label()), light: pos.clone(), hitLift: 0.002,
       onSelect: () => {
         if (!L.act) return;
@@ -390,7 +398,7 @@ function openCard(kind, drawerIndex) {
     it.revealTarget = 1;
     return it;
   });
-  card = { group, cardFx, items: cardItems, reveal: 0, from: d.center.clone().addScaledVector(d.frame.normal, 0.05), to: pos.clone() };
+  card = { group, cardFx, items: cardItems, reveal: 0, near: !!near, from: d.center.clone().addScaledVector(d.frame.normal, 0.05), to: pos.clone() };
   group.position.copy(card.from);
   focus = 0;
 }
@@ -458,7 +466,7 @@ async function doQuit() {
   endFx.uniforms.reveal.value = 0;
   await tween(1500, (x) => (endFx.uniforms.reveal.value = ease(x)));
   state = "ended";
-  ui.hint.textContent = renderer.xr.isPresenting ? "Pull the trigger to return" : "Click or press Enter to return";
+  ui.hint.textContent = renderer.xr.isPresenting ? "Pull the trigger to return" : NO_HOVER ? "Tap to return" : "Click or press Enter to return";
 }
 async function unQuit() {
   state = "busy";
@@ -519,16 +527,54 @@ function pickFromRay(origin, dir) {
   return { item: hit.object.userData.item, point: rp, sign: false, distance: hit.distance };
 }
 
+// Mouse: hover follows the cursor, click selects.
+// Touch / pen: pressing highlights what's under the finger, a tap selects it, dragging looks around
+// (and the finger works as the flashlight while it's down).
+const touch = { id: null, x0: 0, y0: 0, x: 0, y: 0, dragged: false, lastUp: -1e9 };
+const setNdc = (e) => pointer.ndc.set((e.clientX / innerWidth) * 2 - 1, -(e.clientY / innerHeight) * 2 + 1);
+const swingSign = () => { signRig.vel += 1.6; pulseFrom(signRig.pos, new V3(1, 0.85, 0.55)); };
+
 addEventListener("pointermove", (e) => {
-  pointer.ndc.set((e.clientX / innerWidth) * 2 - 1, -(e.clientY / innerHeight) * 2 + 1);
-  pointer.active = true;
-  inputMode = "pointer";
+  if (e.pointerType === "mouse") { setNdc(e); pointer.active = true; inputMode = "pointer"; return; }
+  if (e.pointerId !== touch.id) return;
+  const dx = e.clientX - touch.x, dy = e.clientY - touch.y;
+  touch.x = e.clientX; touch.y = e.clientY;
+  if (!touch.dragged && Math.hypot(e.clientX - touch.x0, e.clientY - touch.y0) > 10) { touch.dragged = true; hovered = null; }
+  if (touch.dragged) dragView(dx, dy);
+  setNdc(e);
 });
-addEventListener("pointerleave", () => (pointer.active = false));
+document.addEventListener("pointerout", (e) => { if (e.pointerType === "mouse" && !e.relatedTarget) pointer.active = false; });   // left the window
+renderer.domElement.addEventListener("pointerdown", (e) => {
+  if (e.pointerType === "mouse" || touch.id !== null) return;
+  Object.assign(touch, { id: e.pointerId, x0: e.clientX, y0: e.clientY, x: e.clientX, y: e.clientY, dragged: false });
+  try { renderer.domElement.setPointerCapture(e.pointerId); } catch { /* pointer already gone */ }
+  setNdc(e);
+  pointer.active = true;
+  inputMode = "touch";
+});
+function endTouch(e, tapped) {
+  if (e.pointerId !== touch.id) return;
+  touch.id = null;
+  touch.lastUp = performance.now();
+  pointer.active = false;
+  if (!tapped || touch.dragged) { cursorRoom.target = 0; hovered = null; return; }
+  setNdc(e);
+  raycaster.setFromCamera(pointer.ndc, camera);
+  const res = pickFromRay(raycaster.ray.origin.clone(), raycaster.ray.direction.clone());
+  cursorRoom.target = 0;
+  if (state === "ended") return unQuit();
+  if (res.item) { hovered = res.item; select(res.item); } else if (res.sign) swingSign();
+  // let the glow linger a moment after the finger lifts
+  const tappedItem = res.item;
+  setTimeout(() => { if (touch.id === null && inputMode === "touch" && hovered === tappedItem) hovered = null; }, 900);
+}
+renderer.domElement.addEventListener("pointerup", (e) => endTouch(e, true));
+renderer.domElement.addEventListener("pointercancel", (e) => endTouch(e, false));
 renderer.domElement.addEventListener("click", () => {
+  if (performance.now() - touch.lastUp < 800) return;   // already handled as a tap
   if (state === "ended") return unQuit();
   if (hovered) select(hovered);
-  else if (signHover) { signRig.vel += 1.6; pulseFrom(signRig.pos, new V3(1, 0.85, 0.55)); }
+  else if (signHover) swingSign();
 });
 function navigate(dir) {
   const list = pickables().sort((a, b) => a.order - b.order);
@@ -537,6 +583,7 @@ function navigate(dir) {
   const cur = list.indexOf(hovered);
   focus = cur < 0 ? (dir > 0 ? 0 : list.length - 1) : (cur + dir + list.length) % list.length;
   hovered = list[focus];
+  if (!renderer.xr.isPresenting && !card?.near) lookToward(hovered.light ?? hovered.group.getWorldPosition(new V3()));
 }
 addEventListener("keydown", (e) => {
   if (["ArrowUp", "w", "W"].includes(e.key)) { navigate(-1); e.preventDefault(); }
@@ -601,7 +648,11 @@ function applyRecenter() {
 const xr = new SparkXr({
   renderer, element: ui.vr, mode: "vr", referenceSpaceType: "local-floor", enableHands: true,
   frameBufferScaleFactor: IS_QUEST ? 0.9 : 1, fixedFoveation: 0.6,
-  onReady: (ok) => { ui.vr.textContent = ok ? "ENTER VR" : "VR UNAVAILABLE"; ui.vr.classList.toggle("off", !ok); ui.vr.style.display = ""; },
+  onReady: (ok) => {
+    ui.vr.textContent = ok ? "ENTER VR" : "VR UNAVAILABLE";
+    ui.vr.classList.toggle("off", !ok);
+    ui.vr.style.display = ok || !NO_HOVER ? "" : "none";   // phones without VR don't need the button
+  },
   onEnterXr: () => { ui.vr.textContent = "EXIT VR"; needRecenter = 12; spark.apertureAngle = 0; xrHint.visible = true; setHint(); },
   onExitXr: () => { ui.vr.textContent = "ENTER VR"; worldRoot.position.set(0, 0, 0); worldRoot.rotation.set(0, 0, 0); xrHint.visible = false; setHint(); },
 });
@@ -640,25 +691,56 @@ function updateXrInput() {
   if (session && needRecenter > 0 && --needRecenter === 0) applyRecenter();
 }
 
-// ------------------------------------------------------------------ desktop camera
-const desk = { look: new THREE.Vector2(), lean: new V3(), base: new V3() };
+// ------------------------------------------------------------------ screen camera (desktop, tablet, phone)
+// The photo is portrait (1536×2048 px). Wide screens see every menu item at once. Upright phones fill
+// their height with the photo and pan sideways (finger drag, or the mouse in a narrow window).
+// Panning only turns the camera, so the room stays as sharp as the photo.
+// view.u / view.v: [centre, swing either way] of the view centre, in photo px.
+const view = { hHalf: 720, vHalf: 730, u: [PW / 2, 50], v: [1150, 33], home: new THREE.Vector2(), target: new THREE.Vector2() };
+const desk = { look: new THREE.Vector2(), lean: new V3() };   // look = current pan, -1..1 on each axis
+const MENU_CENTER_U = 930;   // between the CRT and the drawer labels
 function fitFov() {
   const aspect = innerWidth / innerHeight;
-  const vHalfPx = 730, hHalfPx = 720;
-  let vHalf = Math.atan(vHalfPx / F);
-  if (Math.tan(vHalf) * aspect < hHalfPx / F) vHalf = Math.atan(hHalfPx / F / aspect);
-  camera.fov = THREE.MathUtils.radToDeg(vHalf * 2);
+  let vHalf = 730;
+  // upright screens: widen until the CRT and the drawer labels both fit, letting the (faded) photo edges show a little
+  if (vHalf * aspect < 720) vHalf = Math.min(720 / aspect, Math.max(1024, 550 / aspect));
+  const hHalf = vHalf * aspect;
+  const uLo = Math.min(hHalf, PW / 2 - 50), uHi = Math.max(PW - hHalf, PW / 2 + 50);
+  Object.assign(view, { hHalf, vHalf, u: [(uLo + uHi) / 2, (uHi - uLo) / 2], v: [vHalf >= PH / 2 ? PH / 2 : clamp(1150, vHalf, PH - vHalf), 33] });
+  // narrow screens start on the middle of the menu; wide ones on the middle of the photo
+  view.home.set(view.u[1] > 60 ? clamp((MENU_CENTER_U - view.u[0]) / view.u[1], -1, 1) : 0, 0);
+  view.target.copy(view.home);
+  camera.fov = THREE.MathUtils.radToDeg(2 * Math.atan(vHalf / F));
   camera.aspect = aspect;
   camera.updateProjectionMatrix();
 }
 fitFov();
-addEventListener("resize", () => { renderer.setSize(innerWidth, innerHeight); fitFov(); });
-const aimPoint = unproject(PW / 2, 1150, 3.0);
+desk.look.copy(view.home);
+addEventListener("resize", () => { renderer.setSize(innerWidth, innerHeight); fitFov(); setHint(); });
+/** Finger drag in CSS px → pan; the room follows the finger. */
+function dragView(dx, dy) {
+  if (card?.near) return;   // the card is held in front of you; keep it there
+  view.target.x = clamp(view.target.x - (dx * 2 * view.hHalf) / innerWidth / view.u[1], -1, 1);
+  view.target.y = clamp(view.target.y + (dy * 2 * view.vHalf) / innerHeight / view.v[1], -1, 1);
+}
+/** Pan (on narrow screens) so a room point comes into view. */
+function lookToward(p) {
+  if (view.u[1] <= 60) return;
+  view.target.x = clamp((project(p).u - view.u[0]) / view.u[1], -1, 1);
+}
+/** Closer card distance for small screens (lines ≥ ~30 px apart, card fits on screen), or 0 to keep the default. */
+function cardDistance(defaultDist) {
+  if (!NO_HOVER && Math.min(innerWidth, innerHeight) >= 600) return 0;   // desktop keeps the card beside the drawer
+  const linePx = 30, line = 0.026, cardW = 0.30, cardH = 0.20;
+  const d = Math.max((line * F * innerHeight) / (2 * view.vHalf * linePx), (cardW * F) / (2 * 0.92 * view.hHalf), (cardH * F) / (2 * 0.85 * view.vHalf));
+  return d < defaultDist * 0.9 ? d : 0;
+}
 
 function updateDesktopCamera(dt) {
-  const px = pointer.active ? pointer.ndc.x : 0, py = pointer.active ? pointer.ndc.y : 0;
-  desk.look.x = damp(desk.look.x, px, 3, dt);
-  desk.look.y = damp(desk.look.y, py, 3, dt);
+  if (inputMode === "pointer" && !card?.near) view.target.copy(pointer.active ? pointer.ndc : view.home);
+  const rate = touch.dragged && touch.id !== null ? 14 : 3;
+  desk.look.x = damp(desk.look.x, view.target.x, rate, dt);
+  desk.look.y = damp(desk.look.y, view.target.y, rate, dt);
   const leanTarget = new V3();
   if (hovered && state !== "busy") {
     const toItem = new V3().subVectors(hovered.light ?? hovered.group.getWorldPosition(new V3()), CAM.pos);
@@ -672,12 +754,13 @@ function updateDesktopCamera(dt) {
     .addScaledVector(CAM.right, desk.look.x * 0.07)
     .addScaledVector(CAM.up, desk.look.y * 0.045)
     .add(desk.lean);
-  const aim = aimPoint.clone().addScaledVector(CAM.right, desk.look.x * 0.12).addScaledVector(CAM.up, desk.look.y * 0.08);
+  const aim = unproject(view.u[0] + desk.look.x * view.u[1], view.v[0] - desk.look.y * view.v[1], 3.0);
   if (anim.push > 0) aim.lerp(crt.light, anim.push * 0.6);
   camera.up.copy(CAM.up);
   camera.lookAt(aim);
-  // depth of field focuses on the hovered object
-  const focusDist = hovered ? camera.position.distanceTo(hovered.light ?? hovered.group.position) : 2.4;
+  // depth of field focuses on the hovered object, or the open card
+  const focusDist = hovered && !card ? camera.position.distanceTo(hovered.light ?? hovered.group.position)
+    : card ? camera.position.distanceTo(card.group.position) : 2.4;
   spark.focalDistance = damp(spark.focalDistance || 2.4, focusDist, 4, dt);
   spark.apertureAngle = settings.dof ? 0.0012 : 0;
 }
@@ -687,7 +770,27 @@ function setHint() {
   ui.hint.textContent = renderer.xr.isPresenting
     ? "Point and pull the trigger · thumbstick to browse · grip to recenter"
     : IS_QUEST ? "Press ENTER VR, then point and pull the trigger"
-      : "Mouse or ↑ ↓ to browse · Click / Enter to select · Esc to go back · Gamepad works too";
+      : NO_HOVER ? (view.u[1] > 60 ? "Tap to select · Drag to look around" : "Tap the screen, drawers, floor or sign")
+        : "Mouse or ↑ ↓ to browse · Click / Enter to select · Esc to go back · Gamepad works too";
+}
+
+// ------------------------------------------------------------------ phone frame rate guard
+// Phones start at up to 1.5× resolution and step down (to 0.75×) while the frame rate stays under ~28 fps.
+const perf = { t0: 0, last: 0, frames: 0 };
+function adaptResolution() {
+  if (!IS_PHONE || renderer.xr.isPresenting || state === "intro") return;
+  const now = performance.now();
+  if (now - perf.last > 250) { perf.t0 = now; perf.frames = 0; }   // tab was hidden or stalled: start a fresh window
+  perf.last = now;
+  perf.frames++;
+  if (now - perf.t0 < 2500) return;
+  const fps = (perf.frames * 1000) / (now - perf.t0);
+  perf.t0 = now; perf.frames = 0;
+  if (fps < 28 && pixelRatio > 0.75) {
+    pixelRatio = Math.max(0.75, pixelRatio - 0.25);
+    renderer.setPixelRatio(pixelRatio);
+    renderer.setSize(innerWidth, innerHeight);
+  }
 }
 
 // ------------------------------------------------------------------ flicker
@@ -743,7 +846,7 @@ function frame() {
   else if (pointer.active && (state === "main" || state === "card" || state === "ended")) {
     raycaster.setFromCamera(pointer.ndc, camera);
     const res = pickFromRay(raycaster.ray.origin.clone(), raycaster.ray.direction.clone());
-    if (inputMode === "pointer") hovered = res.item;
+    if (inputMode === "pointer" || (inputMode === "touch" && !touch.dragged)) hovered = res.item;
     signHover = res.sign;
     document.body.style.cursor = res.item || res.sign ? "pointer" : "default";
   }
@@ -805,6 +908,7 @@ function frame() {
   if (card) { card.cardFx.uniforms.time.value = t; card.reveal = damp(card.reveal, 1, 3, dt); card.cardFx.uniforms.reveal.value = card.reveal; card.group.position.lerpVectors(card.from, card.to, ease(Math.min(1, card.reveal * 1.15))); card.group.children.forEach((c) => c.updateVersion?.()); }
 
   renderer.render(scene, camera);
+  adaptResolution();
 }
 renderer.setAnimationLoop(frame);
 // debug: hidden preview panes throttle rAF; ?drive=1 renders on a timer instead
@@ -814,5 +918,5 @@ if (params.has("drive")) setInterval(() => { if (!renderer.xr.isPresenting) fram
 window.__menu = {
   get state() { return state; }, get hovered() { return hovered?.id ?? null; }, items, select: (id) => select(items.find((i) => i.id === id)),
   navigate, back, tier: TIER, splats: roomMesh.packedSplats?.numSplats, project, surface,
-  settings, spark, signRig, camera, room, anim, xrHint,
+  settings, spark, signRig, camera, room, anim, xrHint, view, desk, get pixelRatio() { return pixelRatio; },
 };

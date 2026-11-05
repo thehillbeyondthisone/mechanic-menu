@@ -258,7 +258,7 @@ export function typedLine(text, { widthM = 0.27, heightM = 0.024, mpp = 0.0007, 
   g.font = `${H * 0.8}px ${FONTS.type}`;
   g.fillStyle = color;
   g.textBaseline = "middle";
-  g.fillText(text, 2, H * 0.55);
+  g.fillText(text, 2, H * 0.55, W - 6);   // squeeze long lines to fit the card instead of cutting them off
   return layersToSplats([{ canvas: c, z: 0.0008, alphaCut: 0.15 }], widthM, { splatScale: 0.7 });
 }
 
