@@ -1,0 +1,21 @@
+{
+  "asset": "frog-mechanic-wave.webp",
+  "gaussians": 65536,
+  "rigging_node": "MakeItAnimatableRigGS",
+  "wrapper_revision": "486409c0843b66bd548a787516f0f987effe9aa1",
+  "mia_revision": "8fb51382ff6da556cdb95cc03a48200603f3a493",
+  "bones": 22,
+  "motion": "Authored idle and hello wave",
+  "source_action_frames": 96,
+  "source_action_fps": 24,
+  "rendered_preview_frames": 12,
+  "preview_duration_ms": 3996,
+  "rendered_geometry": "Skinned Gaussian quads with original color/covariance attributes; inference proxy hidden",
+  "renderer": "Blender 4.3 Eevee",
+  "resolution": [
+    640,
+    640
+  ],
+  "sha256": "550458601f1a8650d10a92c6b143c95698d8c2daf070fd5f06a965a7210c9883",
+  "reduced_motion_fallback": "frog-mechanic.png"
+}
