@@ -1,7 +1,8 @@
-"""Build the static GitHub Pages copy of the menu (gh-pages branch).
+"""Build the Workshop chooser, Patterson experience and Splat Studio.
 
 usage: python make_site.py <out_dir>
-Same app as viewer/, with three.js and Spark loaded from a pinned CDN instead of node_modules.
+The original Patterson app lives at mechanic/; the bundled VR gallery at studio/.
+Patterson uses pinned CDN imports; Studio retains its bundled renderer libraries.
 """
 import json
 import re
@@ -30,7 +31,14 @@ def main():
     }}, indent=2)
     html = (VIEWER / "index.html").read_text(encoding="utf-8")
     html = re.sub(r'<script type="importmap">.*?</script>', f'<script type="importmap">\n{importmap}\n</script>', html, flags=re.S)
-    (out / "index.html").write_text(html, encoding="utf-8")
+    # A base URL keeps Patterson's original src/public paths intact at mechanic/.
+    html = html.replace('<head>', '<head>\n<base href="../">', 1)
+    (out / "mechanic").mkdir(exist_ok=True)
+    (out / "mechanic/index.html").write_text(html, encoding="utf-8")
+    (out / "index.html").write_text((VIEWER / "menu.html").read_text(encoding="utf-8"), encoding="utf-8")
+    shutil.copytree(VIEWER / "public/assets/menu", out / "public/assets/menu", dirs_exist_ok=True)
+    shutil.copytree(VIEWER / "studio", out / "studio", dirs_exist_ok=True,
+                    ignore=shutil.ignore_patterns("tests", "serve.py", "__pycache__", "*.pyc"))
     (out / ".nojekyll").write_text("")
     print("site written to", out)
 

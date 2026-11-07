@@ -28,6 +28,10 @@
     cursor: pointer; backdrop-filter: blur(4px); }
   #vr:hover { border-color: var(--accent); color: #fff; }
   #vr.off { opacity: 0.45; cursor: default; }
+  #home { position: fixed; top: max(16px, env(safe-area-inset-top)); left: max(16px, env(safe-area-inset-left)); z-index: 4;
+    color: var(--ink); border: 1px solid #6b5a3c; border-radius: 3px; background: rgba(18,14,10,.72); padding: 10px 13px;
+    font-size: 11px; letter-spacing: .12em; text-decoration: none; backdrop-filter: blur(4px); }
+  #home:hover, #home:focus-visible { color: #fff; border-color: var(--accent); outline: 2px solid var(--accent); outline-offset: 3px; }
   #vignette { position: fixed; inset: 0; pointer-events: none; z-index: 2;
     background: radial-gradient(ellipse at 50% 48%, transparent 55%, rgba(0,0,0,0.55) 100%); }
   @media (max-width: 640px) {
@@ -46,6 +50,7 @@
 </head>
 <body>
   <div id="app"></div>
+  <a id="home" href="./">← THE WORKSHOP</a>
   <div id="vignette"></div>
   <div id="loading"><div class="box">OPENING THE SHOP<div class="track"><div id="bar"></div></div><div id="pct">0%</div></div></div>
   <div id="hint"></div>

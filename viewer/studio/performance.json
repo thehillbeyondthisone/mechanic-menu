@@ -1,0 +1,185 @@
+{
+  "status": "MEASURED_LOCAL_DESKTOP",
+  "created": "2026-11-07T02:04:30.333601+00:00",
+  "browserVersion": "156.0.8078.80",
+  "gpu": {
+    "vendor": "Google Inc. (NVIDIA)",
+    "renderer": "ANGLE (NVIDIA, NVIDIA GeForce RTX 4070 (0x00002786) Direct3D11 vs_5_0 ps_5_0, D3D11)",
+    "timerQuery": true
+  },
+  "sourceGaussians": 327680,
+  "sourceBytes": 22284315,
+  "benchmarks": [
+    {
+      "schema": "tripo-keepers-perf/1",
+      "created": "2026-11-07T02:01:35.308Z",
+      "renderer": "Spark 2.4.0 / Three 0.180.0",
+      "gpu": {
+        "vendor": "Google Inc. (NVIDIA)",
+        "renderer": "ANGLE (NVIDIA, NVIDIA GeForce RTX 4070 (0x00002786) Direct3D11 vs_5_0 ps_5_0, D3D11)",
+        "timerQuery": true
+      },
+      "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/156.0.0.0 Safari/537.36",
+      "viewport": [
+        1280,
+        720
+      ],
+      "drawingBuffer": [
+        1280,
+        720
+      ],
+      "dpr": 1,
+      "loadMs": 273.5,
+      "sourceGaussians": 327680,
+      "sourcePlyBytes": 22284315,
+      "phases": [
+        {
+          "name": "one-static",
+          "visibleAssets": 1,
+          "splats": 65536,
+          "frames": 420,
+          "meanFps": 59.99742868162793,
+          "medianFrameMs": 16.69999999999891,
+          "p95FrameMs": 16.799999999999272,
+          "maxFrameMs": 16.899999999999636,
+          "framesAbove33ms": 0,
+          "cpuSubmitMedianMs": 0.3999999910593033,
+          "gpuMedianMs": 0.082944,
+          "gpuP95Ms": 0.242688,
+          "gpuSamples": 420,
+          "activeSplats": 65536
+        },
+        {
+          "name": "five-static",
+          "visibleAssets": 5,
+          "splats": 327680,
+          "frames": 420,
+          "meanFps": 59.9991428693876,
+          "medianFrameMs": 16.700000000000728,
+          "p95FrameMs": 16.799999999999272,
+          "maxFrameMs": 16.900000000001455,
+          "framesAbove33ms": 0,
+          "cpuSubmitMedianMs": 0.29999999701976776,
+          "gpuMedianMs": 5.665792,
+          "gpuP95Ms": 7.518208,
+          "gpuSamples": 420,
+          "activeSplats": 327680
+        },
+        {
+          "name": "five-walk",
+          "visibleAssets": 5,
+          "splats": 327680,
+          "frames": 720,
+          "meanFps": 59.99900001666638,
+          "medianFrameMs": 16.69999999999709,
+          "p95FrameMs": 16.80000000000291,
+          "maxFrameMs": 17.5,
+          "framesAbove33ms": 0,
+          "cpuSubmitMedianMs": 0.4000000059604645,
+          "gpuMedianMs": 3.913728,
+          "gpuP95Ms": 7.364608,
+          "gpuSamples": 720,
+          "activeSplats": 327680
+        }
+      ],
+      "errors": [],
+      "mode": "chrome-capped",
+      "note": "One versus five fixed matched overview; five-walk follows an outer circle at fixed eye height. All source splats retained, no LOD. GPU queries cover submitted render commands; asynchronous worker sorting is reflected in CPU/frame pacing, not GPU query time.",
+      "receipt": {
+        "saved": "browser-perf-1794016926271185000.json"
+      }
+    },
+    {
+      "schema": "tripo-keepers-perf/1",
+      "created": "2026-11-07T02:02:07.487Z",
+      "renderer": "Spark 2.4.0 / Three 0.180.0",
+      "gpu": {
+        "vendor": "Google Inc. (NVIDIA)",
+        "renderer": "ANGLE (NVIDIA, NVIDIA GeForce RTX 4070 (0x00002786) Direct3D11 vs_5_0 ps_5_0, D3D11)",
+        "timerQuery": true
+      },
+      "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/156.0.0.0 Safari/537.36",
+      "viewport": [
+        1280,
+        720
+      ],
+      "drawingBuffer": [
+        1280,
+        720
+      ],
+      "dpr": 1,
+      "loadMs": 367.6000000089407,
+      "sourceGaussians": 327680,
+      "sourcePlyBytes": 22284315,
+      "phases": [
+        {
+          "name": "one-static",
+          "visibleAssets": 1,
+          "splats": 65536,
+          "frames": 29975,
+          "meanFps": 4282.142857142858,
+          "medianFrameMs": 0.20000000000027285,
+          "p95FrameMs": 0.40000000000009095,
+          "maxFrameMs": 4,
+          "framesAbove33ms": 0,
+          "cpuSubmitMedianMs": 0.10000000894069672,
+          "gpuMedianMs": 0.0768,
+          "gpuP95Ms": 0.252928,
+          "gpuSamples": 25559,
+          "activeSplats": 65536
+        },
+        {
+          "name": "five-static",
+          "visibleAssets": 5,
+          "splats": 327680,
+          "frames": 23457,
+          "meanFps": 3352.6763381690844,
+          "medianFrameMs": 0.2000000000007276,
+          "p95FrameMs": 0.4000000000014552,
+          "maxFrameMs": 227.59999999999854,
+          "framesAbove33ms": 2,
+          "cpuSubmitMedianMs": 0.10000000894069672,
+          "gpuMedianMs": 0.282624,
+          "gpuP95Ms": 0.46592,
+          "gpuSamples": 496,
+          "activeSplats": 327680
+        },
+        {
+          "name": "five-walk",
+          "visibleAssets": 5,
+          "splats": 327680,
+          "frames": 26848,
+          "meanFps": 2237.1282632425364,
+          "medianFrameMs": 0.3000000000029104,
+          "p95FrameMs": 0.6000000000021828,
+          "maxFrameMs": 54.20000000000073,
+          "framesAbove33ms": 5,
+          "cpuSubmitMedianMs": 0.20000000298023224,
+          "gpuMedianMs": 0.325632,
+          "gpuP95Ms": 0.49664,
+          "gpuSamples": 13492,
+          "activeSplats": 327680
+        }
+      ],
+      "errors": [],
+      "mode": "chrome-uncapped",
+      "note": "One versus five fixed matched overview; five-walk follows an outer circle at fixed eye height. All source splats retained, no LOD. GPU queries cover submitted render commands; asynchronous worker sorting is reflected in CPU/frame pacing, not GPU query time.",
+      "receipt": {
+        "saved": "browser-perf-1794016958449466400.json"
+      }
+    }
+  ],
+  "gpuEnvironment": {
+    "gpuBefore": "8650 MiB, 3363 MiB, 3 %, 36",
+    "gpuBeforeCapped": "8877 MiB, 3136 MiB, 17 %, 34",
+    "gpuBeforeUncapped": "8105 MiB, 3908 MiB, 16 %, 36",
+    "gpuAfter": "8312 MiB, 3701 MiB, 69 %, 52"
+  },
+  "limitations": [
+    "Chrome hardware WebGL2/D3D11 on RTX4070;1280x720 drawing buffer;pixelRatio1.",
+    "Capped results describe60Hz presentation; uncapped headless results are synthetic renderer throughput, not displayed frame rate.",
+    "GPU query times are GPU command elapsed time, not whole app latency; clocks/power state can differ strongly between capped and uncapped runs.",
+    "Other apps remained open; pre-run totalGPU3percent and8650MiB occupied. No exclusive-hardware claim.",
+    "No actual mobile/Quest performance measured."
+  ]
+}

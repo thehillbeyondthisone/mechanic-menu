@@ -1,4 +1,17 @@
-# Patterson: single-image Gaussian splat menu
+# The Workshop: mechanic experience + Splat Studio
+
+The entry page is a styled chooser for two bundled experiences:
+
+- **The mechanic** at `mechanic/`: the original Patterson workshop.
+- **Splat Studio** at `studio/`: the five-object TripoSplat gallery, with desktop walking and pickup, plus WebXR controller manipulation.
+
+Both run from the same GitHub Pages site. No localhost service is required. The Studio renderer, controller code and all five PLYs are bundled; desktop/VR support still depends on the browser and hardware. The Studio performance tool prepares a downloadable JSON file because GitHub Pages has no write API. Physical Quest acceptance remains separate from desktop or simulated checks.
+
+`viewer/menu.html`, `viewer/src/menu.css` and `viewer/src/menu.js` provide the landing page. The two destination links and the **1**/**2** keyboard shortcuts open the bundled routes. `tools/serve.py` serves the chooser at `/` and the original viewer at `/mechanic/`; `tools/make_site.py` builds the same routes for GitHub Pages. It retains the original viewer files and data.
+
+The frog image was generated with built-in ImageGen for the selected character test. It is a character preview, not evidence of successful rigging or animation. The Studio thumbnail is a screenshot of the actual five-object gallery. Gallery sources are copied from the preserved `2026-11-06_triposplat-gallery-quest3_prepare` experiment; all five PLY SHA256 values were reverified. Vendor libraries remain pinned at Spark 2.4.0 / Three 0.180.0 for Studio, separately from the original Patterson versions below.
+
+## Original Patterson experience
 
 One photo (`source/patterson.jpg`, the original 1536×2048 file) lifted into a 3D Gaussian splat, presented as an interactive game menu. The menu typography is built from splats and placed on real surfaces in the room. Runs in desktop browsers and on Quest 3 (WebXR).
 

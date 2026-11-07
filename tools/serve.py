@@ -14,6 +14,7 @@ import ssl
 import subprocess
 import sys
 import threading
+from urllib.parse import urlsplit
 from functools import partial
 from pathlib import Path
 
@@ -31,6 +32,26 @@ for ext, mime in {".js": "text/javascript", ".mjs": "text/javascript", ".wasm": 
 class Handler(http.server.SimpleHTTPRequestHandler):
     extensions_map = {**http.server.SimpleHTTPRequestHandler.extensions_map,
                       ".js": "text/javascript", ".wasm": "application/wasm", ".spz": "application/octet-stream"}
+
+    def do_GET(self):
+        path = urlsplit(self.path).path
+        if path in ("/", "/index.html"):
+            self.path = "/menu.html"
+        elif path == "/mechanic":
+            self.send_response(301)
+            self.send_header("Location", "./mechanic/")
+            self.end_headers()
+            return
+        elif path in ("/mechanic/", "/mechanic/index.html"):
+            html = (ROOT / "index.html").read_text(encoding="utf-8")
+            body = html.replace("<head>", '<head>\n<base href="../">', 1).encode("utf-8")
+            self.send_response(200)
+            self.send_header("Content-Type", "text/html; charset=utf-8")
+            self.send_header("Content-Length", str(len(body)))
+            self.end_headers()
+            self.wfile.write(body)
+            return
+        super().do_GET()
 
     def end_headers(self):
         self.send_header("Cache-Control", "no-cache")
