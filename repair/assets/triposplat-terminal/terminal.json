@@ -1,0 +1,60 @@
+{
+  "run_id": "2026-11-06_patterson-triposplat-terminal_attempt1",
+  "file": "terminal-65k.ply",
+  "numSplats": 65536,
+  "sha256": "eee41524b6cd00b7485553228ce64681184bc3eeee2eb29bd086abf84fa5ebf4",
+  "min": [
+    -0.483637273311615,
+    -0.4593076705932617,
+    -0.4996086359024048
+  ],
+  "max": [
+    0.4855753183364868,
+    0.4394473433494568,
+    0.5007236003875732
+  ],
+  "fitMin": [
+    -0.483637273311615,
+    -0.4383662939071655,
+    -0.4996086359024048
+  ],
+  "fitMax": [
+    0.4855753183364868,
+    0.4394473433494568,
+    0.5007236003875732
+  ],
+  "fitMethod": "Axis envelope from opacity>.2, source bytes untouched",
+  "targetSize": [
+    0.39,
+    0.3,
+    0.206
+  ],
+  "center": [
+    -0.18,
+    1.13,
+    -0.092
+  ],
+  "screen": {
+    "position": [
+      -0.18,
+      1.15,
+      0.014
+    ],
+    "size": [
+      0.302,
+      0.19
+    ],
+    "frontAperture": {
+      "x": [
+        -0.337,
+        -0.023
+      ],
+      "y": [
+        1.049,
+        1.251
+      ],
+      "z_greater_than": -0.075
+    }
+  },
+  "runtime": "Covariance affine fit under existing station; hide only old TerminalBody/Bezel/Stand. Original CanvasTexture and hitbox unchanged. Attach after mesh-only miniature."
+}

@@ -1,0 +1,70 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="theme-color" content="#101b19">
+  <meta name="description" content="An experimental VR repair job in Patterson's shop. Pull, inspect, extract, install.">
+  <title>Patterson — Reality Repair</title>
+  <link rel="stylesheet" href="./src/style-v2.css">
+  <link rel="icon" href="./favicon.svg" type="image/svg+xml">
+  <script type="importmap">{"imports":{"three":"./vendor/three/build/three.module.js","three/addons/":"./vendor/three/examples/jsm/","@sparkjsdev/spark":"./vendor/spark.module.js"}}</script>
+</head>
+<body>
+  <div id="world" aria-label="Interactive three-dimensional repair shop"></div>
+  <div class="vignette"></div>
+  <header>
+    <div class="brand"><span class="brand-mark">P.</span><div>PATTERSON<span class="subtitle">SERVICE · PARTS · REALITY REPAIR</span></div></div>
+    <div class="header-actions"><a class="workshop-link" href="../">← THE WORKSHOP</a><button id="order" aria-expanded="false" aria-controls="job-slip">JOB 0417</button><button id="sound" title="Toggle sound" aria-pressed="true">SOUND ON</button><button id="vr" hidden>ENTER VR</button></div>
+  </header>
+  <aside class="job-slip" id="job-slip">
+    <div class="slip-top"><span>WORK ORDER</span><strong>0417</strong></div>
+    <p class="complaint">“ROOM OCCASIONALLY<br>BECOMES A PHOTOGRAPH.”</p>
+    <div class="slip-rule"></div>
+    <ol id="checklist">
+      <li data-step="drawer">Open the service drawer</li>
+      <li data-step="scan">Inspect the unstable part</li>
+      <li data-step="part">Extract the depth regulator</li>
+      <li data-step="install">Seat it in the brass socket</li>
+      <li data-step="calibrate">Calibrate the three channels</li>
+      <li data-step="test">Run the room test</li>
+    </ol>
+    <div class="stamp" id="stamp">AWAITING TECHNICIAN</div>
+  </aside>
+  <div id="loading" role="status"><span class="small-label">OPENING THE SHOP</span><div class="load-track"><div id="load-bar"></div></div><span id="load-status">Preparing work order…</span></div>
+  <section id="intro" aria-labelledby="intro-title" hidden>
+    <span class="small-label">AN AFTER-HOURS SERVICE CALL</span>
+    <h1 id="intro-title">Some things<br>won’t stay <em>solid.</em></h1>
+    <p>Recover a part that won’t stay solid.<br>Tune the room back into alignment. See what’s left inside.</p>
+    <button id="start" class="primary">TAKE THE JOB <span>↗</span></button>
+    <div class="intro-note">AFTER HOURS / BUILD 02 · DESKTOP + VR</div>
+  </section>
+  <div id="reticle" hidden></div>
+  <div id="scan-meter" hidden><span>DEPTH INTEGRITY</span><div><i id="scan-fill"></i></div><strong id="scan-percent">0%</strong></div>
+  <div id="toast" role="status" aria-live="polite"></div>
+  <div id="object-hint" hidden></div>
+  <section id="calibration" hidden aria-labelledby="calibration-title">
+    <div class="calibration-heading"><span class="small-label">REGULATOR / LIVE SIGNAL</span><strong id="signal-quality">0%</strong></div>
+    <h2 id="calibration-title">Find the quiet spot.</h2>
+    <p>Turn each dial until its channel locks. Hold all three steady.</p>
+    <div class="dial-control" data-channel="0"><label for="dial-0">01 / DEPTH</label><output id="dial-value-0" for="dial-0">22</output><input id="dial-0" type="range" min="0" max="100" value="22" aria-label="Depth trim"><span id="dial-status-0">NOISY</span></div>
+    <div class="dial-control" data-channel="1"><label for="dial-1">02 / PHASE</label><output id="dial-value-1" for="dial-1">78</output><input id="dial-1" type="range" min="0" max="100" value="78" aria-label="Phase trim"><span id="dial-status-1">NOISY</span></div>
+    <div class="dial-control" data-channel="2"><label for="dial-2">03 / GAIN</label><output id="dial-value-2" for="dial-2">20</output><input id="dial-2" type="range" min="0" max="100" value="20" aria-label="Gain trim"><span id="dial-status-2">NOISY</span></div>
+    <div class="lock-track"><i id="lock-fill"></i></div><div id="lock-status" role="status">Three channels need alignment.</div>
+    <div class="dial-help">DRAG THE PHYSICAL DIALS · OR USE THESE SLIDERS</div>
+  </section>
+  <footer id="controls" hidden>
+    <div class="current-task"><span class="small-label" id="phase">01 / OPEN</span><p id="instruction">Open the service drawer.</p><span id="control-hint">CLICK OBJECTS · E TO INTERACT · DRAG TO LOOK</span></div>
+    <div class="actions"><button id="secondary" hidden>DOCK PROBE</button><button id="action" class="primary">OPEN DRAWER <span>↗</span></button></div>
+  </footer>
+  <section id="ending" hidden aria-labelledby="ending-title">
+    <span class="small-label">WORK ORDER 0417 · CLOSED</span><h2 id="ending-title">Repair successful.<br><em>Probably.</em></h2>
+    <p>The room is holding together.<br>There’s something new in the drawer.</p>
+    <div class="receipt">0418 — CUSTOMER REPORTS THE SHOP IS SMALLER ON THE INSIDE.</div>
+    <button id="investigate" class="primary">LOOK IN THE DRAWER <span>↗</span></button>
+    <button id="restart" class="text-button">START ANOTHER SHIFT ↻</button>
+  </section>
+  <details id="help"><summary>CONTROLS / HELP</summary><p>Click objects; drag the drawer handle to pull it. Hold the mouse on the fault to inspect it. Drag empty space to look. E performs the current action. Space inspects. Escape docks a held object. R restarts.</p><p>Calibration: drag a physical knob sideways, or use its slider. Keys 1–3 select a channel; left/right arrows turn it. Make all three channels green and hold steady.</p><p>VR: point + trigger; squeeze to grab or pull. Hold trigger to scan. Squeeze a dial and twist to tune it. Trigger clicks provide small dial adjustments. The terminal RECENTER button realigns the scene.</p><p>Original menu preserved separately. Build 01 is archived in versions/.</p></details>
+  <script type="module" src="./src/main.js"></script>
+</body>
+</html>

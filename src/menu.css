@@ -30,3 +30,17 @@ a{color:inherit}.page-shell{width:min(1432px,100%);margin:auto;padding:0 48px}.m
 @media(max-width:700px){.workshop-photo{left:18%;width:64%;top:68px;height:212px}.studio-art .photo-frame{left:6%;width:44%;height:200px;top:80px}.studio-art .frog{left:73%;width:80%;max-width:320px}.studio-art .studio-spark{right:18px;top:66px;font-size:36px}}
 @media(max-width:380px){.workshop-photo{left:17%;width:66%;height:195px}.studio-art .photo-frame{height:181px;top:82px}.studio-art .photo-caption{font-size:5px;letter-spacing:.6px}}
 @media(prefers-reduced-motion:reduce){.studio-art .frog--animated{height:calc(100% - 70px);bottom:14px}}
+
+/* Third experience: a separate, fully bundled repair job. */
+.experiences{grid-template-columns:repeat(3,minmax(0,1fr))}
+.repair{background:#ded7bc;color:#28382e}
+.repair-art{height:321px;position:relative;overflow:hidden;background:radial-gradient(ellipse at 50% 70%,#b9b59655,transparent 74%)}
+.repair-photo{position:absolute;left:7%;top:69px;width:86%;height:226px;margin:0;padding:8px 8px 26px;background:#f3ecda;box-shadow:5px 8px 20px #34432e33;transform:rotate(-2deg);transition:transform .4s}
+.repair-photo img{display:block;width:100%;height:100%;object-fit:cover;object-position:center 54%}
+.repair-photo figcaption{position:absolute;bottom:8px;left:4px;right:4px;text-align:center;font:600 8px 'Barlow Condensed','Arial Narrow',Arial,sans-serif;letter-spacing:1.1px;color:#59604d}
+.repair-note{position:absolute;right:14px;bottom:7px;background:#c2c9a7;color:#46543d;padding:8px 11px;transform:rotate(4deg);font:600 8px monospace;line-height:1.4;letter-spacing:.8px;box-shadow:2px 3px 6px #34432e22}
+.repair .card-kicker,.repair .card-bottom-note{color:#626c50}.repair h2 span{color:#80503a}.repair .description{color:#4f5946}.repair .card-action{background:#354638;border-color:#354638}.repair .card-action:hover{background:#465c48}.repair:has(.card-action:hover) .repair-photo{transform:rotate(0) translateY(-3px)}
+@media(min-width:1500px){.repair-art{height:356px}.repair-photo{top:80px;height:248px}}
+@media(max-width:1000px){.experiences{grid-template-columns:1fr;max-width:640px;margin-inline:auto}.repair-art{height:304px}.repair-photo{left:9%;width:82%;height:216px}.repair-note{right:22px}}
+@media(max-width:380px){.repair-art{height:285px}.repair-photo{height:199px;top:68px}.repair-note{right:12px;font-size:7px}}
+@media(prefers-reduced-motion:reduce){.repair:has(.card-action:hover) .repair-photo{transform:rotate(-2deg)}}
