@@ -1,0 +1,18 @@
+{
+  "asset": "frog-mechanic-wave-24fps.webp",
+  "gaussians": 65536,
+  "bones": 22,
+  "rigging_node": "MakeItAnimatableRigGS",
+  "motion": "Authored idle and hello wave",
+  "frames": 96,
+  "fps": 24,
+  "duration_ms": 4000,
+  "resolution": [
+    640,
+    640
+  ],
+  "sha256": "8c2a5fe8ef2badc59bdc342e1e52ba96d39c3a6abf3961835083132bf703f3cf",
+  "rendered_geometry": "Actual MIA-skinned Gaussian geometry; inference proxy hidden",
+  "source_animation_sha256": "d2d6091cbc5616c05f65f3cec1f076803f67cd1a469b5007981d654440ee08fa",
+  "reduced_motion_fallback": "frog-mechanic.png"
+}
