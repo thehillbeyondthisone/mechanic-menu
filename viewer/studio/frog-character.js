@@ -10,7 +10,7 @@ async function read(url,type){
 
 export class FrogCharacter {
   constructor(scene){
-    this.group=new THREE.Group();this.group.name='Frog mechanic Â· live skinned splats';
+    this.group=new THREE.Group();this.group.name='Frog mechanic · live skinned splats';
     this.group.position.set(2.6,0,2.0);scene.add(this.group);
     this.time=0;this.paused=false;this.transition=1;this.playing='work';this.routineTime=0;this.near=false;this.lastUi=0;
     this.position=new THREE.Vector3();this.quaternion=new THREE.Quaternion();this.scale=new THREE.Vector3();
@@ -28,7 +28,7 @@ export class FrogCharacter {
       return {...clip,data};
     }));
     this.mesh=new SplatMesh({url:new URL(r.rest,url).href,extSplats:true,covSplats:true,lod:false,enableLod:false,raycastable:false});
-    this.mesh.name='Frog Â· 65,536 animated Gaussians';this.mesh.position.y=r.groundOffset;
+    this.mesh.name='Frog · 65,536 animated Gaussians';this.mesh.position.y=r.groundOffset;
     this.mesh.frustumCulled=false;this.group.add(this.mesh);
     await this.mesh.initialized;
     if(this.mesh.numSplats!==r.numSplats)throw Error('Frog Gaussian count mismatch');
