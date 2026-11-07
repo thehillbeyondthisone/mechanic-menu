@@ -3,13 +3,19 @@
 The entry page is a styled chooser for two bundled experiences:
 
 - **The mechanic** at `mechanic/`: the original Patterson workshop.
-- **Splat Studio** at `studio/`: the five-object TripoSplat gallery, with desktop walking and pickup, plus WebXR controller manipulation.
+- **Splat Studio** at `studio/`: five TripoSplat props and a live animated frog mechanic, with desktop walking and pickup, plus WebXR controller manipulation.
 
 Both run from the same GitHub Pages site. No localhost service is required. The Studio renderer, controller code and all five PLYs are bundled; desktop/VR support still depends on the browser and hardware. The Studio performance tool prepares a downloadable JSON file because GitHub Pages has no write API. Physical Quest acceptance remains separate from desktop or simulated checks.
 
 `viewer/menu.html`, `viewer/src/menu.css` and `viewer/src/menu.js` provide the landing page. The two destination links and the **1**/**2** keyboard shortcuts open the bundled routes. `tools/serve.py` serves the chooser at `/` and the original viewer at `/mechanic/`; `tools/make_site.py` builds the same routes for GitHub Pages. It retains the original viewer files and data.
 
-The menu frog was generated with built-in ImageGen, converted by the native 65,536-Gaussian TripoSplat workflow, then rigged by MakeItAnimatableRigGS with 22 Mixamo bones. Its four-second, 24fps idle/wave WebP is rendered from the skinned Gaussian geometry; the inference proxy mesh is hidden. The original still is retained for reduced-motion preferences. The editable rest and animated Blender scenes are preserved in the canonical experiment; the workshop destination remains the original Patterson experience. The Studio thumbnail is a screenshot of the actual five-object gallery. Gallery sources are copied from the preserved `2026-11-06_triposplat-gallery-quest3_prepare` experiment; all five PLY SHA256 values were reverified. Vendor libraries remain pinned at Spark 2.4.0 / Three 0.180.0 for Studio, separately from the original Patterson versions below.
+The frog was generated with built-in ImageGen, converted by the native 65,536-Gaussian TripoSplat workflow, then rigged by MakeItAnimatableRigGS with 22 Mixamo bones. In Studio he is live 3D Gaussian geometry: Spark's native linear blend skinning transforms both centers and covariance on the GPU. The inference proxy mesh is hidden. Five props plus the frog total 393,216 Gaussians. The rest splats, four-influence skin weights and two 24fps bone clips total 4.38 MB. Only bone transforms update each frame, with interpolation and a short blend when switching clips.
+
+Open **Splat Studio**, choose **Walk up to the mechanic**, then select **Hello wave** or **Relaxed idle**. Pause and scrub to inspect a pose. In Quest Browser choose **Enter VR**; use the left stick to approach him and the right stick to snap turn. He stands at the sixth station, separate from the five grabbable props. The viewer-pose collision calculation includes the locomotion rig and tracked headset position. Desktop controls and simulated two-eye WebXR approach/collision checks pass; physical Quest quality, comfort and performance remain untested.
+
+See [Adding motions to the frog](docs/frog-animation-mapping.md) and [`tools/export_frog_clip.py`](tools/export_frog_clip.py) to reuse the accepted rest rig and skin weights with retargeted FBX/BVH actions. The exporter validates the bind rig and was checked against the accepted wave with zero binary transform difference. New source motions still need retargeting and visual review.
+
+The chooser places the frog preview on the Studio card and Patterson's room photo on the workshop card. The preview's four-second, 24fps WebP is rendered from skinned Gaussian geometry, with a still for reduced-motion preferences. The editable rest and animated Blender scenes remain preserved in the canonical experiment. Gallery sources are copied from the preserved `2026-11-06_triposplat-gallery-quest3_prepare` experiment; all five original PLYs are unchanged. Vendor libraries remain pinned at Spark 2.4.0 / Three 0.180.0 for Studio, separately from the original Patterson versions below.
 
 ## Original Patterson experience
 

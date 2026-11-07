@@ -14,6 +14,19 @@ a{color:inherit}.page-shell{width:min(1432px,100%);margin:auto;padding:0 48px}.m
 @media(max-width:380px){h1{font-size:46px}.page-shell{padding:0 15px}.mechanic-art,.studio-art{height:285px}.service-stamp{right:14px;width:66px;height:66px}.orbit-label{font-size:7px}.photo-frame{width:175px;height:198px;top:85px}.card-topline{left:18px;right:18px}.studio-spark{right:26px;font-size:50px}.card-copy{padding-left:21px;padding-right:21px}h2{font-size:55px}.card-kicker{font-size:8px}.card-action{margin:0 20px}.card-bottom-note{padding-left:20px;padding-right:20px;letter-spacing:.7px}}
 @media(prefers-reduced-motion:reduce){html{scroll-behavior:auto}*,*:before,*:after{animation:none!important;transition:none!important}.experience:has(.card-action:hover) .frog{transform:translateX(-50%)}.experience:has(.card-action:hover) .photo-frame{transform:rotate(-11deg)}}
 
-/* The rendered splat preview includes transparent camera framing. */
-.frog--animated{height:calc(100% + 52px);max-width:420px;bottom:-26px}
-@media(prefers-reduced-motion:reduce){.frog--animated{height:calc(100% - 66px);max-width:400px;bottom:12px}}
+/* Patterson has a room portrait; the frog belongs to Splat Studio. */
+.workshop-photo{position:absolute;left:18%;top:67px;width:64%;height:230px;margin:0;padding:8px 8px 28px;background:#efe7d2;box-shadow:5px 8px 20px #6c502d44;transform:rotate(-5deg)}
+.workshop-photo img{display:block;width:100%;height:100%;object-fit:cover;object-position:center 54%;filter:saturate(.65) sepia(.14)}
+.workshop-photo figcaption{position:absolute;bottom:9px;left:8px;right:8px;font-family:'Barlow Condensed','Arial Narrow',Arial,sans-serif;font-size:8px;font-weight:600;letter-spacing:1.3px;text-align:center;color:#64543c}
+.studio-art .photo-frame{width:43%;max-width:215px;height:210px;left:8%;top:87px}
+.studio-art .frog{left:73%;width:80%;max-width:320px;bottom:-42px}
+.studio-art .frog--animated{height:calc(100% + 30px)}
+.studio-art .frog-shadow{left:calc(73% - 58px);width:116px;bottom:18px;background:#0c211d44}
+.studio-art .splat-cloud{opacity:.3}
+.studio-art .studio-spark{right:20px;top:70px;font-size:43px;opacity:.6}
+.studio-art .coordinate-top{top:65px;left:23px}
+@media(min-width:1500px){.workshop-photo{top:75px;height:254px}.studio-art .photo-frame{top:105px;height:218px}.studio-art .frog{max-width:350px}}
+@media(max-width:1000px){.workshop-photo{left:16%;width:68%;top:66px;height:198px}.studio-art .photo-frame{left:6%;height:184px;top:83px}.studio-art .frog{left:75%;max-width:290px}.studio-art .studio-spark{right:15px;font-size:35px}}
+@media(max-width:700px){.workshop-photo{left:18%;width:64%;top:68px;height:212px}.studio-art .photo-frame{left:6%;width:44%;height:200px;top:80px}.studio-art .frog{left:73%;width:80%;max-width:320px}.studio-art .studio-spark{right:18px;top:66px;font-size:36px}}
+@media(max-width:380px){.workshop-photo{left:17%;width:66%;height:195px}.studio-art .photo-frame{height:181px;top:82px}.studio-art .photo-caption{font-size:5px;letter-spacing:.6px}}
+@media(prefers-reduced-motion:reduce){.studio-art .frog--animated{height:calc(100% - 70px);bottom:14px}}
