@@ -1,0 +1,64 @@
+<!doctype html>
+<html lang="en">
+<head>
+<base href="../">
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Patterson Menu</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Alfa+Slab+One&family=Black+Ops+One&family=Oswald:wght@500;600&family=Special+Elite&family=VT323&display=block" rel="stylesheet">
+<style>
+  :root { --bg: #050403; --ink: #efe3c8; --dim: #9c8f78; --accent: #d9a441; }
+  html, body { margin: 0; height: 100%; background: var(--bg); color: var(--ink); overflow: hidden;
+    font-family: "Oswald", "Arial Narrow", sans-serif; -webkit-user-select: none; user-select: none;
+    overscroll-behavior: none; -webkit-touch-callout: none; -webkit-tap-highlight-color: transparent; }
+  #app, #app canvas { position: fixed; inset: 0; width: 100%; height: 100%; display: block; touch-action: none; }
+  #loading { position: fixed; inset: 0; display: grid; place-items: center; background: var(--bg); z-index: 5;
+    transition: opacity 1.2s ease 0.2s; }
+  #loading.done { opacity: 0; pointer-events: none; }
+  #loading .box { width: min(320px, 70vw); text-align: center; letter-spacing: 0.35em; font-size: 13px; color: var(--dim); }
+  #loading .track { height: 2px; background: #2a241c; margin: 18px 0 10px; overflow: hidden; }
+  #bar { height: 100%; background: var(--accent); transform-origin: left; transform: scaleX(0); transition: transform 0.2s; }
+  #pct { font-family: "VT323", monospace; font-size: 18px; letter-spacing: 0.1em; color: var(--accent); }
+  #hint { position: fixed; left: 50%; bottom: max(18px, env(safe-area-inset-bottom)); transform: translateX(-50%);
+    font-size: 12px; letter-spacing: 0.22em; text-transform: uppercase; color: var(--dim); white-space: nowrap;
+    text-shadow: 0 1px 8px #000; z-index: 3; max-width: calc(100vw - 32px); overflow: hidden; text-overflow: ellipsis; }
+  #vr { position: fixed; right: max(16px, env(safe-area-inset-right)); top: max(16px, env(safe-area-inset-top)); z-index: 4; padding: 10px 18px; border: 1px solid #6b5a3c; border-radius: 3px;
+    background: rgba(18, 14, 10, 0.72); color: var(--ink); font: 600 13px/1 "Oswald", sans-serif; letter-spacing: 0.25em;
+    cursor: pointer; backdrop-filter: blur(4px); }
+  #vr:hover { border-color: var(--accent); color: #fff; }
+  #vr.off { opacity: 0.45; cursor: default; }
+  #home { position: fixed; top: max(16px, env(safe-area-inset-top)); left: max(16px, env(safe-area-inset-left)); z-index: 4;
+    color: var(--ink); border: 1px solid #6b5a3c; border-radius: 3px; background: rgba(18,14,10,.72); padding: 10px 13px;
+    font-size: 11px; letter-spacing: .12em; text-decoration: none; backdrop-filter: blur(4px); }
+  #home:hover, #home:focus-visible { color: #fff; border-color: var(--accent); outline: 2px solid var(--accent); outline-offset: 3px; }
+  #vignette { position: fixed; inset: 0; pointer-events: none; z-index: 2;
+    background: radial-gradient(ellipse at 50% 48%, transparent 55%, rgba(0,0,0,0.55) 100%); }
+  @media (max-width: 640px) {
+    #hint { font-size: 11px; letter-spacing: 0.14em; white-space: normal; text-align: center; width: max-content; line-height: 1.5; }
+    #vr { padding: 8px 12px; font-size: 11px; letter-spacing: 0.18em; }
+  }
+  @media (hover: none) { #vr:hover { border-color: #6b5a3c; color: var(--ink); } }
+</style>
+<script type="importmap">
+{
+  "imports": {
+    "three": "https://cdn.jsdelivr.net/npm/three@0.180.0/build/three.module.js",
+    "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.180.0/examples/jsm/",
+    "@sparkjsdev/spark": "https://cdn.jsdelivr.net/npm/@sparkjsdev/spark@2.3.1/dist/spark.module.js"
+  }
+}
+</script>
+</head>
+<body>
+  <div id="app"></div>
+  <a id="home" href="./">← THE WORKSHOP</a>
+  <div id="vignette"></div>
+  <div id="loading"><div class="box">OPENING THE SHOP<div class="track"><div id="bar"></div></div><div id="pct">0%</div></div></div>
+  <div id="hint"></div>
+  <button id="vr" style="display:none">ENTER VR</button>
+  <div id="fade"></div>
+  <script type="module" src="./src/main.js"></script>
+</body>
+</html>

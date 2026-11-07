@@ -1,58 +1,66 @@
 <!doctype html>
 <html lang="en">
 <head>
-<meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<title>Patterson Menu</title>
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Alfa+Slab+One&family=Black+Ops+One&family=Oswald:wght@500;600&family=Special+Elite&family=VT323&display=block" rel="stylesheet">
-<style>
-  :root { --bg: #050403; --ink: #efe3c8; --dim: #9c8f78; --accent: #d9a441; }
-  html, body { margin: 0; height: 100%; background: var(--bg); color: var(--ink); overflow: hidden;
-    font-family: "Oswald", "Arial Narrow", sans-serif; -webkit-user-select: none; user-select: none;
-    overscroll-behavior: none; -webkit-touch-callout: none; -webkit-tap-highlight-color: transparent; }
-  #app, #app canvas { position: fixed; inset: 0; width: 100%; height: 100%; display: block; touch-action: none; }
-  #loading { position: fixed; inset: 0; display: grid; place-items: center; background: var(--bg); z-index: 5;
-    transition: opacity 1.2s ease 0.2s; }
-  #loading.done { opacity: 0; pointer-events: none; }
-  #loading .box { width: min(320px, 70vw); text-align: center; letter-spacing: 0.35em; font-size: 13px; color: var(--dim); }
-  #loading .track { height: 2px; background: #2a241c; margin: 18px 0 10px; overflow: hidden; }
-  #bar { height: 100%; background: var(--accent); transform-origin: left; transform: scaleX(0); transition: transform 0.2s; }
-  #pct { font-family: "VT323", monospace; font-size: 18px; letter-spacing: 0.1em; color: var(--accent); }
-  #hint { position: fixed; left: 50%; bottom: max(18px, env(safe-area-inset-bottom)); transform: translateX(-50%);
-    font-size: 12px; letter-spacing: 0.22em; text-transform: uppercase; color: var(--dim); white-space: nowrap;
-    text-shadow: 0 1px 8px #000; z-index: 3; max-width: calc(100vw - 32px); overflow: hidden; text-overflow: ellipsis; }
-  #vr { position: fixed; right: max(16px, env(safe-area-inset-right)); top: max(16px, env(safe-area-inset-top)); z-index: 4; padding: 10px 18px; border: 1px solid #6b5a3c; border-radius: 3px;
-    background: rgba(18, 14, 10, 0.72); color: var(--ink); font: 600 13px/1 "Oswald", sans-serif; letter-spacing: 0.25em;
-    cursor: pointer; backdrop-filter: blur(4px); }
-  #vr:hover { border-color: var(--accent); color: #fff; }
-  #vr.off { opacity: 0.45; cursor: default; }
-  #vignette { position: fixed; inset: 0; pointer-events: none; z-index: 2;
-    background: radial-gradient(ellipse at 50% 48%, transparent 55%, rgba(0,0,0,0.55) 100%); }
-  @media (max-width: 640px) {
-    #hint { font-size: 11px; letter-spacing: 0.14em; white-space: normal; text-align: center; width: max-content; line-height: 1.5; }
-    #vr { padding: 8px 12px; font-size: 11px; letter-spacing: 0.18em; }
-  }
-  @media (hover: none) { #vr:hover { border-color: #6b5a3c; color: var(--ink); } }
-</style>
-<script type="importmap">
-{
-  "imports": {
-    "three": "https://cdn.jsdelivr.net/npm/three@0.180.0/build/three.module.js",
-    "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.180.0/examples/jsm/",
-    "@sparkjsdev/spark": "https://cdn.jsdelivr.net/npm/@sparkjsdev/spark@2.3.1/dist/spark.module.js"
-  }
-}
-</script>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="theme-color" content="#f1eadb">
+  <meta name="description" content="Step into the mechanic's workshop, or get hands-on with the Splat Studio collection, on screen or in VR.">
+  <title>The Workshop — Choose your next adventure</title>
+  <link rel="icon" href="./public/assets/menu/workshop.svg" type="image/svg+xml">
+  <link rel="stylesheet" href="./src/menu.css">
+  <script defer src="./src/menu.js"></script>
 </head>
 <body>
-  <div id="app"></div>
-  <div id="vignette"></div>
-  <div id="loading"><div class="box">OPENING THE SHOP<div class="track"><div id="bar"></div></div><div id="pct">0%</div></div></div>
-  <div id="hint"></div>
-  <button id="vr" style="display:none">ENTER VR</button>
-  <div id="fade"></div>
-  <script type="module" src="./src/main.js"></script>
+  <a class="skip-link" href="#experiences">Skip to experiences</a>
+  <div class="page-shell">
+    <header class="masthead">
+      <a class="wordmark" href="./" aria-label="The Workshop home"><span class="brand-symbol" aria-hidden="true">✳</span><span>THE<br>WORKSHOP<span class="wordmark-dot">.</span></span></a>
+      <div class="masthead-note"><span class="status-dot" aria-hidden="true"></span> A LITTLE CURIOUS. A LITTLE HANDMADE.</div>
+      <span class="edition">FIELD NOTES <span>№ 001</span></span>
+    </header>
+
+    <main>
+      <section class="intro" aria-labelledby="page-title">
+        <div class="intro-copy">
+          <p class="eyebrow"><span class="tiny-cross" aria-hidden="true">+</span> COME ON IN. PICK A DOOR.</p>
+          <h1 id="page-title">A place to play.<br>A space to <em>explore.</em></h1>
+        </div>
+        <div class="intro-aside"><span class="hand-arrow" aria-hidden="true">↙</span><p>Small experiments.<br>Strange characters.<br>Entirely new worlds.</p></div>
+      </section>
+
+      <section id="experiences" class="experiences" aria-label="Choose an experience">
+        <article class="experience mechanic" aria-labelledby="mechanic-title">
+          <div class="card-topline"><span><b>01</b> / THE EXPERIENCE</span><span class="card-tag">STEP INSIDE</span></div>
+          <div class="mechanic-art" aria-hidden="true">
+            <span class="art-ring ring-one"></span><span class="art-ring ring-two"></span>
+            <span class="orbit-label">A FAMILIAR PLACE.<br>AN UNUSUAL FACE.</span>
+            <span class="frog-shadow"></span>
+            <img class="frog" src="./public/assets/menu/frog-mechanic.png" alt="" width="1254" height="1254" fetchpriority="high">
+            <span class="service-stamp">OPEN FOR<br><strong>ODDITIES</strong><span>EST. SOMEWHERE ELSE</span></span>
+            <span class="art-cross cross-one">+</span><span class="art-cross cross-two">+</span>
+          </div>
+          <div class="card-copy"><p class="card-kicker">CLOCK IN. LOOK AROUND.</p><h2 id="mechanic-title">Meet the<br><span>mechanic.</span></h2><p class="description">A curious character. A workshop full of stories. Come see what’s going on inside.</p></div>
+          <a class="card-action" id="mechanic-link" href="./mechanic/"><span>Enter the workshop</span><span class="action-end"><kbd aria-hidden="true">1</kbd><span aria-hidden="true">↗</span></span></a>
+          <span class="card-bottom-note">THE PATTERSON WORKSHOP · INTERACTIVE SPLAT EXPERIENCE</span>
+        </article>
+
+        <article class="experience studio" aria-labelledby="studio-title">
+          <div class="card-topline"><span><b>02</b> / THE STUDIO</span><span class="card-tag">GET HANDS-ON</span></div>
+          <div class="studio-art" aria-hidden="true">
+            <div class="studio-grid"></div>
+            <div class="photo-frame"><img src="./public/assets/menu/studio-overview.png" alt="" width="1280" height="720"><div class="photo-grain"></div><span class="photo-caption">FIVE OBJECTS. ALL YOURS TO EXPLORE.</span></div>
+            <div class="splat-cloud"><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i></div>
+            <span class="studio-coordinate coordinate-top">X · Y · Z</span><span class="studio-coordinate coordinate-bottom">IMAGINATION, IN THREE DIMENSIONS.</span>
+            <span class="studio-spark">✳</span>
+          </div>
+          <div class="card-copy"><p class="card-kicker">LOOK CLOSER. GET YOUR HANDS DIRTY.</p><h2 id="studio-title">Pick it up.<br><span>Play a little.</span></h2><p class="description">Five splat objects. One hands-on gallery. Grab, turn and resize the collection, on screen or in VR.</p></div>
+          <a class="card-action" id="studio-link" href="./studio/"><span>Enter Splat Studio</span><span class="action-end"><kbd aria-hidden="true">2</kbd><span aria-hidden="true">↗</span></span></a>
+          <span class="card-bottom-note">THE FIRST-PASS COLLECTION · DESKTOP & WEBXR</span>
+        </article>
+      </section>
+    </main>
+
+    <footer class="footer"><span>MADE WITH A LITTLE PATIENCE <span aria-hidden="true">&</span> A LOT OF CURIOSITY.</span><p><span class="footer-line"></span> Nothing ordinary, hopefully.</p><span class="keyboard-hint"><kbd>1</kbd> <kbd>2</kbd> TO CHOOSE</span></footer>
+  </div>
 </body>
 </html>
