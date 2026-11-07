@@ -1,13 +1,15 @@
 # The Workshop: mechanic experience + Splat Studio
 
-The entry page is a styled chooser for two bundled experiences:
+The entry page is a styled chooser for three bundled experiences:
 
 - **The mechanic** at `mechanic/`: the original Patterson workshop.
 - **Splat Studio** at `studio/`: five TripoSplat props and a live animated frog mechanic, with desktop walking and pickup, plus WebXR controller manipulation.
 
-Both run from the same GitHub Pages site. No localhost service is required. The Studio renderer, controller code and all five PLYs are bundled; desktop/VR support still depends on the browser and hardware. The Studio performance tool prepares a downloadable JSON file because GitHub Pages has no write API. Physical Quest acceptance remains separate from desktop or simulated checks.
+- **Reality Repair** at `repair/`: a complete repair job with generated probe, regulator, cabinet, drawer, dials and terminal housing. Its original live screen, drawer controls, inspection, socket installation, calibration and completion sequence remain functional.
 
-`viewer/menu.html`, `viewer/src/menu.css` and `viewer/src/menu.js` provide the landing page. The two destination links and the **1**/**2** keyboard shortcuts open the bundled routes. `tools/serve.py` serves the chooser at `/` and the original viewer at `/mechanic/`; `tools/make_site.py` builds the same routes for GitHub Pages. It retains the original viewer files and data.
+All three run from the same GitHub Pages site. No localhost service is required. The Studio renderer, controller code and all five PLYs are bundled; desktop/VR support still depends on the browser and hardware. The Studio performance tool prepares a downloadable JSON file because GitHub Pages has no write API. Physical Quest acceptance remains separate from desktop or simulated checks.
+
+`viewer/menu.html`, `viewer/src/menu.css` and `viewer/src/menu.js` provide the landing page. The three destination links and the **1**/**2**/**3** keyboard shortcuts open the bundled routes. `tools/serve.py` serves the chooser at `/` and the original viewer at `/mechanic/`; the bundled game is served at `/repair/`; `tools/make_site.py` builds the same routes for GitHub Pages. It retains the original viewer files and data. Reality Repair bundles its own pinned renderer and runtime assets; its header links back to the chooser. See [Reality Repair](docs/reality-repair.md) for controls and packaging notes.
 
 The frog was generated with built-in ImageGen, converted by the native 65,536-Gaussian TripoSplat workflow, then rigged by MakeItAnimatableRigGS with 22 Mixamo bones. In Studio he is live 3D Gaussian geometry: Spark's native linear blend skinning transforms both centers and covariance on the GPU. The inference proxy mesh is hidden. Five props plus the frog total 393,216 Gaussians. The rest splats, four-influence skin weights and two 24fps bone clips total 4.38 MB. Only bone transforms update each frame, with interpolation and a short blend when switching clips.
 

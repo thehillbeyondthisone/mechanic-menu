@@ -1,0 +1,18 @@
+/* Keep scenery controls reachable through noninteractive overlays. */
+#controls, .current-task, .job-slip { pointer-events: none; }
+.actions { pointer-events: auto; }
+@media (max-width: 1100px) {
+  .job-slip { width: 205px; }
+  .job-slip ol { display: none; }
+  .job-slip .stamp { margin-top: 12px; }
+}
+@media (max-width: 850px) {
+  .current-task { max-width: 340px; }
+  .current-task p { font-size: 22px; }
+  #controls { gap: 2px; }
+}
+@media (max-width: 500px) {
+  .job-slip { width: 160px; }
+  .current-task { max-width: 300px; }
+  .current-task p { font-size: 20px; }
+}

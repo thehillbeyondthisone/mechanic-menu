@@ -1,0 +1,107 @@
+{
+  "run_id": "2026-11-06_patterson-triposplat-station_attempt1",
+  "assets": [
+    {
+      "id": "cabinet",
+      "file": "cabinet-65k.ply",
+      "numSplats": 65536,
+      "min": [
+        -0.39828264713287354,
+        -0.5666525363922119,
+        -0.4823416471481323
+      ],
+      "max": [
+        0.3915000557899475,
+        0.4999994933605194,
+        0.4887641668319702
+      ],
+      "sha256": "5ed0129a729861526cef54f192aa65fdc0a55b4704ddc841209ccf666ca7b4cb",
+      "targetSize": [
+        0.86,
+        0.9825,
+        0.48
+      ],
+      "center": [
+        0,
+        0.49125,
+        0
+      ],
+      "yaw": -1.5707963267948966,
+      "fitMin": [
+        -0.39828264713287354,
+        -0.5024690628051758,
+        -0.4823416471481323
+      ],
+      "fitEvidence": {
+        "method": "Raw bounds except topY uses minimum among opacity>.2; runtime clip above authoredtop+.0035m",
+        "raw_min_y": -0.5666525363922119,
+        "opaque_min_y": -0.5024690628051758,
+        "source_points": 65536,
+        "opaque_points": 59128
+      }
+    },
+    {
+      "id": "drawer",
+      "file": "drawer-65k.ply",
+      "numSplats": 65536,
+      "min": [
+        -0.5021083354949951,
+        -0.20059704780578613,
+        -0.499383807182312
+      ],
+      "max": [
+        0.49946993589401245,
+        0.1639261245727539,
+        0.4993515610694885
+      ],
+      "sha256": "bd2ad6aff237d3263979ff7065ee4dd5e4445ffaabc36337ae8ad167fb8b940b",
+      "targetSize": [
+        0.75,
+        0.19,
+        0.43
+      ],
+      "center": [
+        0,
+        0.7375,
+        0.06
+      ],
+      "yaw": -1.5707963267948966
+    },
+    {
+      "id": "dial",
+      "file": "dial-65k.ply",
+      "numSplats": 65536,
+      "min": [
+        -0.36137938499450684,
+        -0.6930661201477051,
+        -0.4921703040599823
+      ],
+      "max": [
+        0.3558040261268616,
+        0.4958609640598297,
+        0.48974770307540894
+      ],
+      "sha256": "856845352151bdbcab24e491da25ff48e3a26f17d941858cce92cc12212f0493",
+      "targetSize": [
+        0.05,
+        0.05,
+        0.026
+      ],
+      "center": [
+        0,
+        0,
+        0.003
+      ],
+      "yaw": -1.5707963267948966
+    }
+  ],
+  "instances": [
+    "cabinet",
+    "drawer",
+    "depth",
+    "phase",
+    "gain"
+  ],
+  "runtime": "Affine visual fit only; original roots/pivots/travel/rules retained. Cabinet alpha cutout preserves authored bay x<.356,y.635-.854,z>-.167. Source PLY unchanged.",
+  "miniature": "Clone original mesh-only miniature before attaching station splats."
+}

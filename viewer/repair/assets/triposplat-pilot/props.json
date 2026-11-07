@@ -1,0 +1,64 @@
+{
+  "run_id": "2026-11-06_patterson-triposplat-props_attempt1",
+  "kind": "Generated appearances under unchanged authored interaction roots",
+  "source_color": "SH0 baked color; no physical relighting",
+  "axes": "X rotation PI; per-prop Y yaw; uniform fit and local recenter only",
+  "assets": [
+    {
+      "id": "probe",
+      "file": "probe-65k.ply",
+      "numSplats": 65536,
+      "min": [
+        -0.2612285912036896,
+        -0.520073413848877,
+        -0.204605370759964
+      ],
+      "max": [
+        0.2643245458602905,
+        0.4978979229927063,
+        0.21452683210372925
+      ],
+      "sha256": "d08ac842f8990316a1b025c8ddafd2206829dd94c69191af67a5276d9a022184",
+      "bytes": 4456863,
+      "yaw": 1.5707963267948966,
+      "fitSize": [
+        0.11,
+        0.24,
+        0.125
+      ],
+      "center": [
+        0,
+        0.05624999664723873,
+        -0.012250000610947609
+      ]
+    },
+    {
+      "id": "regulator",
+      "file": "regulator-65k.ply",
+      "numSplats": 65536,
+      "min": [
+        -0.3382207751274109,
+        -0.433544397354126,
+        -0.5008932948112488
+      ],
+      "max": [
+        0.34163612127304077,
+        0.4221108555793762,
+        0.4999816417694092
+      ],
+      "sha256": "cf7697eb1abdff179318e83c7ab4d4b34bed6ad19f9c65bbf7c010b98b35894a",
+      "bytes": 4456863,
+      "yaw": -1.5707963267948966,
+      "fitSize": [
+        0.10699999704957008,
+        0.08399999979883432,
+        0.07700000191107392
+      ],
+      "center": [
+        0,
+        -0.009500001091510057,
+        0.007000000448897481
+      ]
+    }
+  ]
+}

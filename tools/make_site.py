@@ -1,4 +1,4 @@
-"""Build the Workshop chooser, Patterson experience and Splat Studio.
+"""Build the Workshop chooser, Patterson, Splat Studio and Reality Repair.
 
 usage: python make_site.py <out_dir>
 The original Patterson app lives at mechanic/; the bundled VR gallery at studio/.
@@ -39,6 +39,8 @@ def main():
     shutil.copytree(VIEWER / "public/assets/menu", out / "public/assets/menu", dirs_exist_ok=True)
     shutil.copytree(VIEWER / "studio", out / "studio", dirs_exist_ok=True,
                     ignore=shutil.ignore_patterns("tests", "serve.py", "__pycache__", "*.pyc"))
+    shutil.copytree(VIEWER / "repair", out / "repair", dirs_exist_ok=True,
+                    ignore=shutil.ignore_patterns("tests", "__pycache__", "*.pyc"))
     (out / ".nojekyll").write_text("")
     print("site written to", out)
 
