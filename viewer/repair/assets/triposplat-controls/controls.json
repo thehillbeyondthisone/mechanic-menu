@@ -1,0 +1,80 @@
+{
+  "run_id": "2026-11-09_patterson-socket-test-controls_publish_attempt1",
+  "assets": [
+    {
+      "id": "socket",
+      "file": "socket-65k.ply",
+      "numSplats": 65536,
+      "sha256": "fd093c02845a39683018f4e981cb6df385cea1928fdfa3ada34f786a8450e38c",
+      "min": [
+        -0.4740615785121918,
+        -0.5893638134002686,
+        -0.5005916357040405
+      ],
+      "max": [
+        0.4929249882698059,
+        0.4829050898551941,
+        0.5010280609130859
+      ],
+      "fitMin": [
+        -0.4740615785121918,
+        -0.479702353477478,
+        -0.5005916357040405
+      ],
+      "fitMax": [
+        0.4929249882698059,
+        0.4829050898551941,
+        0.5010280609130859
+      ],
+      "fitMethod": "Axis envelope from opacity>.2; source bytes untouched",
+      "targetSize": [
+        0.19,
+        0.17,
+        0.108
+      ],
+      "center": [
+        0.265,
+        1.13,
+        0.144
+      ]
+    },
+    {
+      "id": "test-button",
+      "file": "test-button-65k.ply",
+      "numSplats": 65536,
+      "sha256": "88edbb9413cff56de8c3b1dddb098353f4e0bb7b13441aa85591349713cb7c36",
+      "min": [
+        -0.390298992395401,
+        -0.2898417115211487,
+        -0.498166561126709
+      ],
+      "max": [
+        0.39155298471450806,
+        0.29371196031570435,
+        0.4986206889152527
+      ],
+      "fitMin": [
+        -0.390298992395401,
+        -0.2898417115211487,
+        -0.498166561126709
+      ],
+      "fitMax": [
+        0.39155298471450806,
+        0.29371196031570435,
+        0.4986206889152527
+      ],
+      "fitMethod": "Axis envelope from opacity>.2; source bytes untouched",
+      "targetSize": [
+        0.12,
+        0.057,
+        0.075
+      ],
+      "center": [
+        -0.28,
+        1.014,
+        0.145
+      ]
+    }
+  ],
+  "runtime": "Separate rigid covariance appearances at authored station-local bounds. Original socket backing, hitboxes, snap center, TEST label/actions and mesh-only miniature retained. Runtime front socket aperture; no source PLY edits."
+}

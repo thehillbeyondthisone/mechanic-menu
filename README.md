@@ -5,7 +5,7 @@ The entry page is a styled chooser for three bundled experiences:
 - **The mechanic** at `mechanic/`: the original Patterson workshop.
 - **Splat Studio** at `studio/`: five TripoSplat props and a live animated frog mechanic, with desktop walking and pickup, plus WebXR controller manipulation.
 
-- **Reality Repair** at `repair/`: a complete repair job with generated probe, regulator, cabinet, drawer, dials and terminal housing. Its original live screen, drawer controls, inspection, socket installation, calibration and completion sequence remain functional.
+- **Reality Repair** at `repair/`: a complete repair job with generated probe, regulator, cabinet, drawer, dials, terminal housing, regulator socket and red TEST button. Its original live screen, drawer controls, inspection, socket installation, calibration and completion sequence remain functional.
 
 All three run from the same GitHub Pages site. No localhost service is required. The Studio renderer, controller code and all five PLYs are bundled; desktop/VR support still depends on the browser and hardware. The Studio performance tool prepares a downloadable JSON file because GitHub Pages has no write API. Physical Quest acceptance remains separate from desktop or simulated checks.
 

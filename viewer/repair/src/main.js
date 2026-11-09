@@ -8,6 +8,7 @@ import { dressStation, makeTethers, makeMiniature } from './workshop-details.js'
 import { attachGeneratedProps, generatedPropsSnapshot } from './generated-props.js';
 import { attachGeneratedStation, generatedStationSnapshot } from './generated-station.js';
 import { attachGeneratedTerminal, generatedTerminalSnapshot, liveScreenSnapshot } from './generated-terminal.js';
+import { attachGeneratedControls, generatedControlsSnapshot } from './generated-controls.js';
 
 const $ = id => document.getElementById(id);
 const V = THREE.Vector3, clamp = THREE.MathUtils.clamp, damp = THREE.MathUtils.damp;
@@ -32,7 +33,7 @@ const fx = makeRoomFx();
 let room, station, drawer, probe, part, consoleScreen, consoleCtx, noteCtx, noteTexture;
 let drawerTarget = 0, drawerOpen = 0, heldProbe = null, heldPart = null;
 let probeDock, partHome, socketPos, fault, faultPoints, faultPositions, faultSeeds;
-let generatedProps, generatedStation, generatedTerminal;
+let generatedProps, generatedStation, generatedTerminal, generatedControls;
 let ready = false, hover = null, lastPhase = '', toastUntil = 0, time = 0, lastTime = performance.now();
 let scanActive = false, scanBeep = 0, testSoundStage = -1;
 let repairBlend = 0, pullAmount = 0, introBlend = 0;
@@ -182,6 +183,7 @@ async function boot() {
   generatedStation=await attachGeneratedStation({station,drawer,dials,miniature});
   fx.u.stationSkin.value=generatedStation.mode==='triposplat'?1:0;
   generatedTerminal=await attachGeneratedTerminal({station,miniature,screen:consoleScreen});
+  generatedControls=await attachGeneratedControls({station,miniature});
   setupXR();
   $('load-bar').style.width='100%';$('loading').hidden=true;$('intro').hidden=false;
   ready=true;refreshUI();updateScreen(true);
@@ -637,6 +639,7 @@ Object.defineProperty(window,'repairDebug',{get:()=>({phase:job.phase,drawer:dra
   drawCalls:renderer.info.render.calls,triangles:renderer.info.render.triangles,
   activeSplats:spark.activeSplats,generatedProps:generatedPropsSnapshot(generatedProps),
   generatedStation:generatedStationSnapshot(generatedStation),
+  generatedControls:generatedControlsSnapshot(generatedControls),
   generatedTerminal:generatedTerminalSnapshot(generatedTerminal),liveScreen:liveScreenSnapshot(consoleScreen,screenLines(),camera),
   hitTargets:hits.map(o=>{const p=o.getWorldPosition(new V()).project(camera);return {id:o.userData.id,x:(p.x+1)*innerWidth/2,y:(1-p.y)*innerHeight/2,z:p.z};}),
   dials:[...job.dials],channelLocks:[...job.channelLocks],echoAge,
