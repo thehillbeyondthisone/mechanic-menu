@@ -1,7 +1,7 @@
 // PATTERSON — single-photo Gaussian splat game menu (desktop + Quest 3 WebXR)
 import * as THREE from "three";
 import { SparkRenderer, SplatMesh, SparkXr, isOculus, isMobile } from "@sparkjsdev/spark";
-import { roomEffects, textEffects, dustEffects } from "./effects.js";
+import { roomEffects, textEffects, dustEffects, inkEffects, moteEffects, rimEffects, outlineSegments, outlineNearest } from "./effects.js";
 import * as T from "./typography.js";
 
 const V3 = THREE.Vector3;
@@ -129,7 +129,12 @@ const worldRoot = new THREE.Group();     // re-anchored to the head in VR
 scene.add(worldRoot);
 
 // ------------------------------------------------------------------ room
-const room = roomEffects(3);
+const CRT_LIFT = 3;   // lifts 0-2: the game's clipboards; 3-4: the terminal (one outline per quad, photo px)
+const CRT_QUADS = [
+  [[398, 869], [567, 865], [592, 996], [380, 1046]],
+  [[356, 927], [400, 869], [400, 1044], [372, 1046]],
+];
+const room = roomEffects(3, { lifts: CRT_LIFT + CRT_QUADS.length, cam: { pos: CAM.pos, right: CAM.right, down: CAM.down, fwd: CAM.fwd, focal: F, width: PW, height: PH } });
 const showProgress = (p) => { ui.bar.style.transform = `scaleX(${p})`; ui.pct.textContent = `${Math.round(p * 100)}%`; };
 // Hosts with a per-file size cap get the splat as parts: window.PATTERSON_SPLAT_PARTS = { high: [...], quest: [...] }
 async function fetchParts(names) {
@@ -194,26 +199,32 @@ worldRoot.add(dustMesh);
 
 // ------------------------------------------------------------------ menu objects
 const items = [];          // selectable things
-let state = "intro";       // intro | main | card | busy | ended
+let state = "intro";       // intro | main | play | card | busy | ended
 let focus = 0;             // keyboard/gamepad index into active list
 let hovered = null;
 let signHover = false;
-const pickables = () => items.filter((it) => it.enabled && it.layer === (state === "card" ? "card" : "main"));
+// escape game ("clock out"): while active, the room's selectable layer is "play" instead of "main"
+const game = { active: false, step: 0, entry: "", t0: 0, won: false, busy: false, hasCard: false, readRP: false, sawDigit: false, penalty: 0 };
+const GAME_RESET = { step: 0, entry: "", won: false, busy: false, hasCard: false, readRP: false, sawDigit: false, penalty: 0 };
+const baseLayer = () => (game.active ? "play" : "main");
+const pickables = () => items.filter((it) => it.enabled && it.layer === (state === "card" ? "card" : baseLayer()));
 
-function makeItem({ id, mesh, fx, group, w, h, light, color = new V3(1, 0.85, 0.6), layer = "main", onSelect, order = 0, hitLift = 0.01 }) {
+// extra: selfLit (ignores the room light), hoverReveal (shows only while hovered), torchAt (keyboard torch target)
+function makeItem({ id, mesh, fx, group, w, h, light, color = new V3(1, 0.85, 0.6), layer = "main", onSelect, order = 0, hitLift = 0.01, ...extra }) {
   mesh.objectModifier = fx.modifier;
   group.add(mesh);
   const hit = new THREE.Mesh(new THREE.PlaneGeometry(w, h), new THREE.MeshBasicMaterial({ visible: false }));
   hit.position.z = hitLift;
   group.add(hit);
   worldRoot.add(group);
-  const it = { id, mesh, fx, group, hit, light: light ?? group.position.clone(), color, layer, onSelect, order, hover: 0, press: 0, reveal: 0, revealTarget: 0, enabled: true };
+  const it = { id, mesh, fx, group, hit, light: light ?? group.position.clone(), color, layer, onSelect, order, hover: 0, press: 0, reveal: 0, revealTarget: 0, enabled: true, ...extra };
   hit.userData.item = it;
   items.push(it);
   return it;
 }
 
-let crt, signRig, drawerFrames;
+let crt, signRig, drawerFrames, cabFrame;
+const labelSpots = [];
 const options = { quality: TIER };
 await Promise.all([roomMesh.initialized, fontsReady]);
 
@@ -229,9 +240,20 @@ function buildMenu() {
     mesh: crtLines("idle"), light: scrPos.clone(),
     onSelect: () => doContinue(),
   });
+  crt.basePos = crtGroup.position.clone();
+  // the whole monitor (case and bezel) cut out of the photo, so it can float up to you to be read.
+  // Two quads trace its outline: the front, and the sloped left side of the case (the wall above it stays put).
+  // The outline hugs the monitor, so the depth window can reach far: the splat build snapped the bezel's
+  // edge pixels back onto the calendar / wall behind (≈ 2.5-2.8 m), and those must come along too.
+  CRT_QUADS.forEach((q, k) => {
+    const L = room.uniforms.lifts[CRT_LIFT + k];
+    L.ab.value.set(...q[0], ...q[1]);
+    L.cd.value.set(...q[2], ...q[3]);
+    L.z.value.set(2.15, 2.95);
+  });
 
   // drawer labels: NEW GAME / LOAD GAME / OPTIONS on the black cabinet
-  const cab = planeFrame(1320, 1400, 1520, 1760);
+  const cab = cabFrame = planeFrame(1320, 1400, 1520, 1760);
   // drawer quads (photo px): top edge, bottom edge as [uL,vL,uR,vR]
   const edges = [
     [1300, 1355, 1536, 1450], [1295, 1458, 1536, 1560], [1275, 1565, 1536, 1675], [1255, 1740, 1536, 1850],
@@ -254,7 +276,7 @@ function buildMenu() {
     drawerFrames.push({ center: c, frame: cab, half: new THREE.Vector2(hx, hy), open: 0, target: 0 });
   }
   const labels = [
-    { id: "new", text: "NEW GAME", tape: "#b3201c", at: [1390, 1415], onSelect: () => doNewGame() },
+    { id: "new", text: "NEW GAME", tape: "#b3201c", at: [1390, 1415], onSelect: () => startGame() },
     { id: "load", text: "LOAD GAME", tape: "#1b1b1d", at: [1385, 1520], onSelect: () => openCard("load", 1) },
     { id: "options", text: "OPTIONS", tape: "#1f4f9c", at: [1372, 1632], onSelect: () => openCard("options", 2) },
   ];
@@ -265,6 +287,7 @@ function buildMenu() {
     const measured = Math.min(...[[-10, 0], [10, 0], [0, -6], [0, 6], [0, 0]].map(([du, dv]) => depthAt(L.at[0] + du, L.at[1] + dv)));
     const onSurface = unproject(L.at[0], L.at[1], measured);
     const pos = onSurface.distanceTo(CAM.pos) < onPlane.distanceTo(CAM.pos) ? onSurface : onPlane;
+    labelSpots[k] = pos.clone();
     placeOn(g, cab, pos, 0.012);
     const it = makeItem({
       id: L.id, group: g, fx: textEffects("plain"), w: 0.26, h: 0.05, order: k + 1,
@@ -340,29 +363,8 @@ function swapMesh(it, mesh) {
 // ------------------------------------------------------------------ sub-menu card
 let card = null;
 function openCard(kind, drawerIndex) {
-  closeCard(true);
-  state = "card";
   drawerFrames.forEach((d, k) => (d.target = k === drawerIndex ? 0.16 : 0));
   const d = drawerFrames[drawerIndex];
-  let pos = CAM.pos.clone().lerp(d.center, 0.52).add(new V3(-0.08, 0.2, 0));   // ~1 m away, handed out of the drawer
-  // small screens: hold the card closer, in the middle of the view, so its lines are big enough to read and tap
-  const near = !renderer.xr.isPresenting && cardDistance(pos.distanceTo(CAM.pos));
-  if (near) pos = camera.position.clone().addScaledVector(camera.getWorldDirection(new V3()), near);
-  const group = new THREE.Group();
-  group.position.copy(pos);
-  const cardMesh = T.indexCard();
-  const cardFx = textEffects("plain");
-  cardMesh.objectModifier = cardFx.modifier;
-  group.add(cardMesh);
-  worldRoot.add(group);
-  worldRoot.updateMatrixWorld(true);
-  if (near) { group.up.copy(camera.up); group.lookAt(camera.position); }
-  else group.lookAt(worldRoot.localToWorld(CAM.pos.clone()));   // +z faces the photo viewpoint
-  const title = kind === "options" ? "OPTIONS" : "LOAD GAME";
-  const head = T.typedLine(title, { color: "#8a1c1c" });
-  head.objectModifier = cardFx.modifier;
-  head.position.set(0, 0.078, 0.001);
-  group.add(head);
   const lines = kind === "options" ? [
     { label: () => `LIGHT FLICKER ....... ${settings.flicker ? "ON " : "OFF"}`, act: () => { settings.flicker = !settings.flicker; } },
     { label: () => `DEPTH OF FIELD ...... ${settings.dof ? "ON " : "OFF"}`, act: () => { settings.dof = !settings.dof; } },
@@ -379,41 +381,83 @@ function openCard(kind, drawerIndex) {
     { label: () => "SLOT 3 ..... -- EMPTY --", act: null },
     { label: () => "< BACK", act: () => closeCard() },
   ];
+  spawnCard({
+    kind, title: kind === "options" ? "OPTIONS" : "LOAD GAME", lines,
+    from: d.center.clone().addScaledVector(d.frame.normal, 0.05),
+    anchor: CAM.pos.clone().lerp(d.center, 0.52).add(new V3(-0.08, 0.2, 0)),   // ~1 m away, handed out of the drawer
+  });
+}
+/**
+ * A hand-held card that flies from `from` to `anchor`. lines: [{ label(), act, x, y, w, h, style, selfLit, keep }]
+ * (default layout: one typed line per row). `keep` skips re-typing the line after it's used.
+ */
+function spawnCard({ kind, title, lines, from, anchor, mesh = T.indexCard(), onClose, fixed = false }) {
+  closeCard(true);
+  state = "card";
+  let pos = anchor.clone();
+  // small screens: hold the card closer, in the middle of the view, so its lines are big enough to read and tap
+  // (fixed: the caller already laid it out up close, e.g. beside the zoomed terminal)
+  const near = !fixed && !renderer.xr.isPresenting && cardDistance(pos.distanceTo(CAM.pos));
+  if (near) pos = camera.position.clone().addScaledVector(camera.getWorldDirection(new V3()), near);
+  const group = new THREE.Group();
+  group.position.copy(pos);
+  const cardFx = textEffects("plain");
+  mesh.objectModifier = cardFx.modifier;
+  group.add(mesh);
+  worldRoot.add(group);
+  worldRoot.updateMatrixWorld(true);
+  if (near) { group.up.copy(camera.up); group.lookAt(camera.position); }
+  else group.lookAt(worldRoot.localToWorld(CAM.pos.clone()));   // +z faces the photo viewpoint
+  if (title) {
+    const head = T.typedLine(title, { color: "#8a1c1c" });
+    head.objectModifier = cardFx.modifier;
+    head.position.set(0, 0.078, 0.001);
+    group.add(head);
+  }
+  const lineMesh = (L) => T.typedLine(L.label(), L.style);
   const cardItems = lines.map((L, i) => {
     const g = new THREE.Group();
-    g.position.set(0.0, 0.035 - i * 0.026, 0.001);
-    group.add(g);
-    // items are parented to the card group; reparent bookkeeping so worldRoot.add in makeItem doesn't steal them
+    // items are parented to the card group; makeItem adds them to worldRoot, so they're re-added below
     const it = makeItem({
-      id: `card-${i}`, group: g, fx: textEffects("ink"), w: 0.29, h: 0.026, layer: "card", order: i,
-      mesh: T.typedLine(L.label()), light: pos.clone(), hitLift: 0.002,
+      id: `card-${i}`, group: g, fx: textEffects("ink"), w: L.w ?? 0.29, h: L.h ?? 0.026, layer: "card", order: i,
+      mesh: lineMesh(L), light: pos.clone(), hitLift: 0.002, selfLit: L.selfLit,
       onSelect: () => {
         if (!L.act) return;
         L.act();
-        if (card && it.group.parent) swapMesh(it, T.typedLine(L.label()));
+        if (!L.keep && card && it.group.parent) swapMesh(it, lineMesh(L));
       },
     });
+    g.position.set(L.x ?? 0, L.y ?? 0.035 - i * 0.026, 0.001);
     group.add(g);
     it.enabled = !!L.act;
     it.revealTarget = 1;
+    it.refresh = () => swapMesh(it, lineMesh(L));
     return it;
   });
-  card = { group, cardFx, items: cardItems, reveal: 0, near: !!near, from: d.center.clone().addScaledVector(d.frame.normal, 0.05), to: pos.clone() };
+  card = { kind, group, cardFx, items: cardItems, reveal: 0, near: !!near || fixed, from: from.clone(), to: pos.clone(), onClose };
   group.position.copy(card.from);
   focus = 0;
+  return card;
 }
 function closeCard(immediate = false) {
   if (!card) return;
+  const was = card;
   for (const it of card.items) { items.splice(items.indexOf(it), 1); }
   worldRoot.remove(card.group);
   card.group.traverse((o) => o.dispose?.());
   card = null;
-  drawerFrames.forEach((d) => (d.target = 0));
-  if (!immediate) { state = "main"; focus = items.filter((i) => i.layer === "main").findIndex((i) => i.id === "options"); }
+  if (!game.active) drawerFrames.forEach((d) => (d.target = 0));
+  was.onClose?.();
+  if (!immediate) {
+    state = game.active ? "play" : "main";
+    if (!game.active) focus = items.filter((i) => i.layer === "main").findIndex((i) => i.id === "options");
+  }
 }
 
 // ------------------------------------------------------------------ actions
-const anim = { pulseAge: -1, pulseOrigin: new V3(), dissolve: 0, light: 1, push: 0, intro: 0 };
+const anim = { pulseAge: -1, pulseOrigin: new V3(), dissolve: 0, light: 1, push: 0, intro: 0, torch: 0, seat: 0, seatTarget: 0 };
+// terminal brought up close (see zoomTerminal): off = how far the monitor moves, aim = where the camera looks
+const zoom = { amt: 0, target: 0, off: new V3(), aim: new V3() };
 function pulseFrom(p, color) { anim.pulseAge = 0; anim.pulseOrigin.copy(p); room.uniforms.pulseColor.value.copy(color); }
 const wait = (ms) => new Promise((r) => setTimeout(r, ms));
 function tween(ms, fn) {
@@ -469,6 +513,7 @@ async function doQuit() {
   ui.hint.textContent = renderer.xr.isPresenting ? "Pull the trigger to return" : NO_HOVER ? "Tap to return" : "Click or press Enter to return";
 }
 async function unQuit() {
+  if (game.won) return leaveGame();
   state = "busy";
   await tween(800, (x) => (endFx.uniforms.reveal.value = 1 - x));
   endWords.visible = false;
@@ -496,13 +541,513 @@ worldRoot.add(xrHint);
 function select(it) {
   if (!it || !it.enabled) return;
   if (state === "ended") return unQuit();
-  if (state !== "main" && state !== "card") return;
+  if (state !== "main" && state !== "card" && state !== "play") return;
   it.press = 1;
   it.onSelect?.();
 }
 function back() {
   if (state === "card") closeCard();
   else if (state === "ended") unQuit();
+  else if (state === "play") { if (anim.seatTarget) standUp(); else leaveGame(); }
+}
+
+// ------------------------------------------------------------------ escape game: "clock out"
+// The tube light dies after closing. The terminal wants the last day worked (calendar on the wall)
+// and the supervisor's PIN (scrawled on the timing-belt poster, only visible under the torch).
+// That releases the locked drawer with R.P.'s timecard, and wakes the monitor on the back shelf.
+// R.P.'s slot number is on his last work order (the clipboards lift out of the photo): "sit in
+// my chair and read the dust". From his chair, floating motes line up into the slot number.
+// File the card in that slot on the rack to clock out.
+const CODES = ["1120", "7391"];
+const SLOT = 4;
+const BEST_KEY = "patterson.clockout.best";
+const readBest = () => { try { return +localStorage.getItem(BEST_KEY) || 0; } catch { return 0; } };
+const saveBest = (ms) => { try { localStorage.setItem(BEST_KEY, String(Math.round(ms))); } catch { /* storage blocked */ } };
+const fmtTime = (ms) => { const s = Math.round(ms / 1000); return `${String(Math.floor(s / 60)).padStart(2, "0")}:${String(s % 60).padStart(2, "0")}`; };
+const DARK = 0.16;
+// R.P.'s chair: a little left of and lower than the photo's viewpoint
+const SEAT = CAM.right.clone().multiplyScalar(-0.2).addScaledVector(CAM.up, -0.12);
+let ink = null, winWords = null, monitor = null, cardProp = null, lockTape = null, digit = null;
+const clips = [];
+const winFx = textEffects("neon");
+
+/** Image rect → centre and size (m) on a fitted plane. */
+function rectOn(frame, u0, v0, u1, v1) {
+  const pts = [[u0, v0], [u1, v0], [u0, v1], [u1, v1]].map(([u, v]) => rayPlane(u, v, frame));
+  const c = rayPlane((u0 + u1) / 2, (v0 + v1) / 2, frame);
+  let w = 0, h = 0;
+  for (const p of pts) { const d = new V3().subVectors(p, c); w = Math.max(w, Math.abs(d.dot(frame.right))); h = Math.max(h, Math.abs(d.dot(frame.up))); }
+  return { center: c, w: w * 2, h: h * 2 };
+}
+/** A frame at a room point that faces the photo's viewpoint (for things with no flat face, like the chair). */
+function facingFrame(c) {
+  const normal = new V3().subVectors(CAM.pos, c).normalize();
+  const right = CAM.right.clone().addScaledVector(normal, -CAM.right.dot(normal)).normalize();
+  return { center: c.clone(), normal, right, up: new V3().crossVectors(normal, right) };
+}
+const pxSize = (px, z) => (px / F) * z;
+
+// work orders on the hanging clipboards; quad = the board's outline in the photo (px)
+const WORK_ORDERS = [
+  { id: "g-clip-a", quad: [[800, 1340], [985, 1268], [1003, 1372], [795, 1452]], no: "0412", lines: [
+    "BAY 1 ...... BRAKE PADS + ROTORS", "'98 CIVIC   CUST: GARZA", "TECH: J. LOPEZ", "STATUS: DONE - PAID CASH"] },
+  { id: "g-clip-d", quad: [[630, 1720], [848, 1592], [905, 1690], [640, 1785]], no: "0417", rp: true, lines: [
+    "BAY 2 ...... TIMING BELT", "'04 ODYSSEY   CUST: KIM", "TECH: R. PATTERSON", { text: "MY LAST JOB. MY CARD GOES", note: true },
+    { text: "IN MY SLOT. SIT IN MY CHAIR", note: true }, { text: "AND READ THE DUST.  - R.P.", note: true }] },
+  { id: "g-clip-e", quad: [[790, 1780], [960, 1665], [985, 1750], [830, 1862]], no: "0416", lines: [
+    "BAY 5 ...... A/C RECHARGE", "'11 F-150   CUST: OKAFOR", "TECH: D. NGUYEN", "STATUS: WAITING ON PARTS"] },
+];
+const MONITOR = {
+  wake: { gist: "DRAWER 3", log: ["21:47  POWER FAULT, BAY 2", "21:48  DRAWER 3 RELEASED", "R.P. LEFT YOUR TIME CARD", "IN THE DRAWER."] },
+  card: { gist: "FILE CARD", log: ["TIME CARDS GO IN THE RACK", "ON THE FRONT OF THE DESK.", "R.P.'S SLOT NUMBER IS ON", "HIS LAST WORK ORDER."] },
+  rp: { gist: "SIT DOWN", log: ["R.P. ALWAYS SAID:", "\"SIT IN MY CHAIR", "AND READ THE DUST.\"", "(HIS CHAIR IS ON THE LEFT)"] },
+  dust: { gist: "SLOT ?", log: ["YOU SAW IT.", "FILE THE CARD IN THAT", "SLOT ON THE RACK."] },
+};
+const monitorMode = () => (!game.hasCard ? "wake" : !game.readRP ? "card" : !game.sawDigit ? "rp" : "dust");
+const monitorScreen = (gist) => T.crtScreen([
+  { text: "BAY CAM 2", size: 0.16, y: 0.16 },
+  { text: gist ?? MONITOR[monitorMode()].gist, size: 0.36, y: 0.55 },
+  { text: "_", size: 0.2, y: 0.85 },
+], { widthM: monitor.w, heightM: monitor.h, mpp: 0.0009, color: [170, 210, 255] });
+
+function buildGame() {
+  // wall calendar (November 2026), half hidden behind the CRT; fit the plane on the car picture above it
+  const calWall = planeFrame(520, 775, 612, 860);
+  const cal = rectOn(calWall, 556, 862, 618, 946);
+  const cg = new THREE.Group();
+  placeOn(cg, calWall, cal.center, 0.008);
+  makeItem({
+    id: "g-calendar", layer: "play", group: cg, fx: textEffects("plain"), w: cal.w + 0.03, h: cal.h + 0.03, order: 1,
+    mesh: T.bracket(cal.w, cal.h, "CALENDAR"), light: cal.center.clone(), torchAt: cal.center.clone(), hoverReveal: true, selfLit: true,
+    onSelect: () => openCalendar(cal.center),
+  });
+
+  // timing-belt poster on the front of the desk (always in view), and the hidden marker ink across its diagram
+  const belt = planeFrame(100, 1460, 560, 1900);
+  const beltR = rectOn(belt, 90, 1510, 530, 1850);   // the poster is tilted, so keep this inside its face
+  const bg = new THREE.Group();
+  placeOn(bg, belt, beltR.center, 0.008);
+  makeItem({
+    id: "g-belt", layer: "play", group: bg, fx: textEffects("plain"), w: beltR.w + 0.03, h: beltR.h + 0.03, order: 2,
+    mesh: T.bracket(beltR.w, beltR.h, "TIMING BELT"), light: beltR.center.clone(), hoverReveal: true, selfLit: true,
+    onSelect: () => pulseFrom(beltR.center, new V3(1, 0.85, 0.6)),
+  });
+  const inkR = rectOn(belt, 60, 1585, 400, 1810);
+  items.find((i) => i.id === "g-belt").torchAt = inkR.center.clone();
+  const inkGroup = new THREE.Group();
+  placeOn(inkGroup, belt, inkR.center, 0.006);
+  const inkFx = inkEffects();
+  const inkMesh = T.inkScrawl([
+    { text: "SUPV PIN", size: 0.13, x: 0.46, y: 0.22, rot: -0.1 },
+    { text: "7 3 9 1", size: 0.3, x: 0.5, y: 0.55, rot: -0.07, underline: 0.62 },
+    { text: "- R.P.", size: 0.09, x: 0.78, y: 0.86, rot: -0.04 },
+  ], { widthM: inkR.w, heightM: inkR.h });
+  inkMesh.objectModifier = inkFx.modifier;
+  inkGroup.add(inkMesh);
+  worldRoot.add(inkGroup);
+  inkGroup.updateMatrix();
+  ink = { group: inkGroup, mesh: inkMesh, fx: inkFx, inv: inkGroup.matrix.clone().invert(), reveal: 0, rect: inkR };
+
+  // the locked bottom drawer (where OPTIONS is in the menu)
+  const dg = new THREE.Group();
+  placeOn(dg, cabFrame, labelSpots[2], 0.012);
+  lockTape = makeItem({
+    id: "g-drawer", layer: "play", group: dg, fx: textEffects("plain"), w: 0.26, h: 0.05, order: 3,
+    mesh: T.dymoTape("LOCKED", { tape: "#6b1612", seed: 41, heightM: 0.048 }),
+    light: drawerFrames[2].center.clone().addScaledVector(cabFrame.normal, 0.05),
+    onSelect: () => rattleDrawer(),
+  });
+
+  // R.P.'s timecard, standing up in the drawer once it's released
+  const dr = drawerFrames[2];
+  const cardAt = dr.center.clone().addScaledVector(dr.frame.normal, 0.13).addScaledVector(dr.frame.up, dr.half.y + 0.03).addScaledVector(dr.frame.right, -dr.half.x * 0.35);
+  const tg = new THREE.Group();
+  placeOn(tg, facingFrame(cardAt), cardAt, 0);
+  tg.rotateZ(0.12);
+  cardProp = makeItem({
+    id: "g-timecard", layer: "play", group: tg, fx: textEffects("plain"), w: 0.1, h: 0.14, order: 5,
+    mesh: T.timeCard(), light: cardAt.clone(), torchAt: cardAt.clone(), hidden: true, enabled: false,
+    onSelect: () => takeCard(),
+  });
+
+  // the flat monitor on the back shelf: dead until the PIN goes in, then it guides you
+  const scr = planeFrame(968, 690, 1056, 786);
+  const mr = rectOn(scr, 966, 688, 1058, 788);
+  const mg = new THREE.Group();
+  placeOn(mg, scr, mr.center, 0.01);
+  const size = { w: mr.w * 0.92, h: mr.h * 0.9 };
+  monitor = Object.assign(makeItem({
+    id: "g-monitor", layer: "play", group: mg, fx: textEffects("crt"), w: mr.w, h: mr.h, order: 4, color: new V3(0.6, 0.8, 1),
+    mesh: T.crtScreen([{ text: "", size: 0.1, y: 0.5 }], { widthM: 0.05, heightM: 0.05 }), light: mr.center.clone(), torchAt: mr.center.clone(),
+    selfLit: true, hidden: true, enabled: false, onSelect: () => openMonitor(),
+  }), size);
+
+  // hanging clipboards: each board is cut out of the photo by its outline and floats toward you
+  WORK_ORDERS.forEach((W, k) => {
+    const [a, b, c, d] = W.quad;
+    const L = room.uniforms.lifts[k];
+    L.ab.value.set(a[0], a[1], b[0], b[1]);
+    L.cd.value.set(c[0], c[1], d[0], d[1]);
+    const zs = [], pts = [];
+    for (let s = 0.1; s < 0.95; s += 0.2) for (let r = 0.1; r < 0.95; r += 0.2) {
+      const top = [lerp(a[0], b[0], s), lerp(a[1], b[1], s)], bot = [lerp(d[0], c[0], s), lerp(d[1], c[1], s)];
+      const u = lerp(top[0], bot[0], r), v = lerp(top[1], bot[1], r);
+      zs.push(depthAt(u, v)); pts.push(surface(u, v));
+    }
+    zs.sort((x, y) => x - y);
+    L.z.value.set(zs[Math.floor(zs.length * 0.1)] - 0.06, zs[Math.floor(zs.length * 0.9)] + 0.05);
+    const center = pts.reduce((acc, p) => acc.add(p), new V3()).divideScalar(pts.length);
+    const us = W.quad.map((q) => q[0]), vs = W.quad.map((q) => q[1]);
+    const z = project(center).z;
+    const w = pxSize(Math.max(...us) - Math.min(...us), z), h = pxSize(Math.max(...vs) - Math.min(...vs), z);
+    const g = new THREE.Group();
+    placeOn(g, facingFrame(center), center, 0.02);
+    const it = makeItem({
+      id: W.id, layer: "play", group: g, fx: textEffects("plain"), w, h, order: 6 + k,
+      mesh: T.bracket(w * 0.9, h * 0.8, "CLIPBOARD"), light: center.clone(), torchAt: center.clone(), hoverReveal: true, selfLit: true,
+      onSelect: () => openWorkOrder(clips[k]),
+    });
+    clips.push({ ...W, item: it, center, lift: L, dir: new V3().subVectors(CAM.pos, center).normalize(), amt: 0, open: false });
+  });
+
+  // R.P.'s chair, at the left edge of the photo
+  const chairAt = surface(75, 1235);
+  const chairZ = project(chairAt).z;
+  const chg = new THREE.Group();
+  placeOn(chg, facingFrame(chairAt), chairAt, 0.02);
+  makeItem({
+    id: "g-chair", layer: "play", group: chg, fx: textEffects("plain"), w: pxSize(110, chairZ) + 0.03, h: pxSize(150, chairZ) + 0.03, order: 9,
+    mesh: T.bracket(pxSize(100, chairZ), pxSize(140, chairZ), "CHAIR"), light: chairAt.clone(), torchAt: chairAt.clone(), hoverReveal: true, selfLit: true,
+    onSelect: () => (anim.seatTarget ? standUp() : sitDown()),
+  });
+
+  // timecard rack slots (front of the desk), labelled 1-5 with embosser tape
+  const rack = planeFrame(655, 1330, 785, 1600);
+  [1345, 1393, 1441, 1489, 1537].forEach((v, k) => {
+    const g = new THREE.Group();
+    const at = rayPlane(712, v, rack);
+    placeOn(g, rack, at, 0.006);
+    makeItem({
+      id: `g-slot-${k + 1}`, layer: "play", group: g, fx: textEffects("plain"), w: 0.07, h: 0.034, order: 10 + k,
+      mesh: T.dymoTape(String(k + 1), { tape: "#1d1d1f", widthM: 0.034, heightM: 0.019, mpp: 0.00035, seed: 70 + k }),
+      light: at.clone(), torchAt: at.clone(), selfLit: true, onSelect: () => trySlot(k + 1, at),
+    });
+  });
+
+  // the slot number, made of floating motes that only line up from R.P.'s chair
+  const E = CAM.pos.clone().add(SEAT);
+  const P = surface(1100, 1330);
+  const fwd = new V3().subVectors(P, E);
+  const dist = fwd.length();
+  fwd.normalize();
+  const right = CAM.right.clone().addScaledVector(fwd, -CAM.right.dot(fwd)).normalize();
+  const up = new V3().crossVectors(right, fwd);
+  const glyph = T.glyphSamples(String(SLOT), { step: 2 });
+  const fx = moteEffects();
+  const mesh = new SplatMesh({
+    constructSplats: (splats) => {
+      let seed = 17;
+      const r = () => ((seed = (seed * 16807) % 2147483647) / 2147483647);
+      const c = new V3(), s = new V3(), q = new THREE.Quaternion(), color = new THREE.Color();
+      for (const [gx, gy] of glyph) {
+        const dir = fwd.clone().addScaledVector(right, gx * 0.21).addScaledVector(up, gy * 0.21).normalize();
+        // spread along the line of sight: near motes swing the most when you're not in the seat
+        const along = dist * (0.16 + 0.74 * r() * r());
+        c.copy(E).addScaledVector(dir, along);
+        s.setScalar(along * (0.0015 + r() * 0.0005));
+        color.setRGB(1.0, 0.84 + r() * 0.08, 0.58 + r() * 0.1);
+        splats.pushSplat(c, s, q, 0.75 + r() * 0.25, color);
+      }
+    },
+  });
+  mesh.objectModifier = fx.modifier;
+  worldRoot.add(mesh);
+  digit = { mesh, fx, eye: E, target: P, reveal: 0, align: 0 };
+}
+
+const entryText = () => (game.entry + "____").slice(0, 4).split("").join(" ");
+function gameScreen(mode = "prompt") {
+  const head = { text: "C:\\PATTERSON> CLOCKOUT", size: 0.1, y: 0.13 };
+  if (mode === "denied") return T.crtScreen([head, { text: "ACCESS DENIED", size: 0.2, y: 0.45 }, { text: "TRY AGAIN", size: 0.13, y: 0.72 }]);
+  if (mode === "ok") return T.crtScreen([head, { text: "CODE ACCEPTED", size: 0.19, y: 0.47 }, { text: "...", size: 0.13, y: 0.72 }]);
+  if (mode === "locked") return T.crtScreen([head, { text: "DRAWER 3: LOCKED", size: 0.14, y: 0.42 }, { text: "RELEASE AT TERMINAL", size: 0.11, y: 0.66 }]);
+  if (mode === "released") return T.crtScreen([head, { text: "PIN ACCEPTED", size: 0.15, y: 0.36 }, { text: "DRAWER 3 RELEASED", size: 0.12, y: 0.58 }, { text: "TAKE YOUR TIME CARD", size: 0.11, y: 0.8 }]);
+  if (mode === "won") return T.crtScreen([head, { text: "CARD FILED", size: 0.15, y: 0.36 }, { text: "CLOCKED OUT", size: 0.15, y: 0.58 }, { text: "GOOD NIGHT.", size: 0.13, y: 0.8 }]);
+  return game.step === 0
+    ? T.crtScreen([head, { text: "POWER FAULT - BAY 2", size: 0.11, y: 0.32 }, { text: "LAST DAY WORKED?", size: 0.13, y: 0.53 }, { text: `MMDD  ${entryText()}`, size: 0.17, y: 0.78 }])
+    : T.crtScreen([head, { text: "DATE OK  11/20", size: 0.11, y: 0.32 }, { text: "SUPERVISOR PIN?", size: 0.13, y: 0.5 }, { text: "SEE: TIMING BELT", size: 0.11, y: 0.66 }, { text: `PIN   ${entryText()}`, size: 0.15, y: 0.84 }]);
+}
+function refreshEntry() {
+  swapMesh(crt, gameScreen());
+  if (card?.kind === "keypad") card.items[0].refresh();
+}
+let hintTimer = 0;
+function flashHint(text, ms = 1800) {
+  ui.hint.textContent = text;
+  clearTimeout(hintTimer);
+  hintTimer = setTimeout(setHint, ms);
+}
+
+/**
+ * Float the terminal up to the viewer to be read: the monitor's own splats slide toward the eye along
+ * their line of sight (so it looks exactly as photographed, only closer), and the keypad is laid out beside it.
+ * Returns where the keypad card goes.
+ */
+function zoomTerminal() {
+  anim.seatTarget = 0;
+  const inXr = renderer.xr.isPresenting;
+  const eye = inXr ? worldRoot.worldToLocal(new V3().setFromMatrixPosition(renderer.xr.getCamera().matrixWorld)) : CAM.pos.clone();
+  const wide = inXr || innerWidth / innerHeight >= 1.15;
+  const toCrt = new V3().subVectors(crt.basePos, eye);
+  const dir = toCrt.clone().normalize();
+  const right = CAM.right.clone().addScaledVector(dir, -CAM.right.dot(dir)).normalize();
+  const up = new V3().crossVectors(right, dir);
+  const near = wide ? 0.62 : 0.7;
+  zoom.off.copy(dir).multiplyScalar(near - toCrt.length());
+  const at = eye.clone().addScaledVector(dir, near);
+  // wide screens: terminal left of centre, keypad on the right; upright screens: terminal above, keypad below
+  zoom.aim.copy(at).addScaledVector(wide ? right : up, wide ? 0.17 : -0.13);
+  zoom.target = 1;
+  return wide ? eye.clone().addScaledVector(dir, 0.58).addScaledVector(right, 0.36).addScaledVector(up, -0.03)
+    : eye.clone().addScaledVector(dir, 0.5).addScaledVector(up, -0.235);
+}
+
+function openKeypad() {
+  if (game.busy) return;
+  if (game.step >= CODES.length) { pulseFrom(crt.light, new V3(0.3, 1, 0.5)); return; }
+  game.entry = "";
+  const keypadAt = zoomTerminal();
+  const key = (text, x, y, w, act) => ({ label: () => text, x, y, w, h: 0.03, keep: true, act, style: { widthM: w, heightM: 0.03, align: "center" } });
+  const lines = [{ label: () => `${game.step ? "PIN " : "MMDD"}   ${entryText()}`, y: 0.045, selfLit: true, style: { heightM: 0.03, align: "center" } }];
+  "1234567890".split("").forEach((d, k) => lines.push(key(d, -0.11 + (k % 5) * 0.055, 0.004 - Math.floor(k / 5) * 0.036, 0.045, () => keypadPress(d))));
+  lines.push(key("CLEAR", -0.075, -0.074, 0.1, () => { if (!game.busy) { game.entry = ""; refreshEntry(); } }));
+  lines.push(key("< BACK", 0.075, -0.074, 0.1, () => closeCard()));
+  spawnCard({
+    kind: "keypad", title: game.step ? "SUPERVISOR PIN" : "LAST DAY WORKED (MMDD)", lines, from: crt.light,
+    anchor: keypadAt, fixed: true, onClose: () => { zoom.target = 0; },
+  });
+  focus = 1;
+}
+function keypadPress(d) {
+  if (game.busy || game.entry.length >= 4 || game.step >= CODES.length) return;
+  game.entry += d;
+  refreshEntry();
+  if (game.entry.length === 4) submitCode();
+}
+function keypadDelete() {
+  if (game.busy || !game.entry) return;
+  game.entry = game.entry.slice(0, -1);
+  refreshEntry();
+}
+async function submitCode() {
+  game.busy = true;
+  await wait(250);
+  if (game.entry !== CODES[game.step]) {
+    pulseFrom(crt.light, new V3(1, 0.25, 0.2));
+    swapMesh(crt, gameScreen("denied"));
+    await wait(1000);
+    game.entry = "";
+    refreshEntry();
+    game.busy = false;
+    return;
+  }
+  pulseFrom(crt.light, new V3(0.3, 1, 0.5));
+  game.step++;
+  game.entry = "";
+  if (game.step >= CODES.length) { closeCard(); game.busy = false; return releaseDrawer(); }
+  swapMesh(crt, gameScreen("ok"));
+  await wait(1100);
+  if (card?.kind === "keypad") closeCard();
+  refreshEntry();
+  game.busy = false;
+}
+
+function openCalendar(at) {
+  spawnCard({
+    kind: "calendar", mesh: T.calendarPage(), from: at,
+    anchor: CAM.pos.clone().lerp(at, 0.33).addScaledVector(CAM.right, 0.05).addScaledVector(CAM.up, 0.02),
+    lines: [{ label: () => "< BACK", x: 0.1, y: -0.095, w: 0.09, h: 0.024, keep: true, style: { widthM: 0.09, align: "center" }, act: () => closeCard() }],
+  });
+}
+async function rattleDrawer() {
+  if (game.step >= CODES.length) return;
+  const d = drawerFrames[2];
+  swapMesh(crt, gameScreen("locked"));
+  for (const o of [0.03, 0, 0.025, 0, 0.015, 0]) { d.target = o; await wait(110); }
+  await wait(1200);
+  if (game.active && game.step < CODES.length && !game.busy) swapMesh(crt, gameScreen());
+}
+const show = (it, on) => { it.hidden = !on; it.enabled = on; };
+
+async function releaseDrawer() {
+  swapMesh(crt, gameScreen("released"));
+  show(lockTape, false);
+  drawerFrames[2].target = 0.18;
+  pulseFrom(drawerFrames[2].center, new V3(1, 0.85, 0.4));
+  await wait(700);
+  if (!game.active) return;
+  show(cardProp, true);
+  await wait(900);
+  if (!game.active) return;
+  // the shelf monitor stutters awake
+  swapMesh(monitor, monitorScreen("NO SIGNAL"));
+  show(monitor, true);
+  pulseFrom(monitor.light, new V3(0.5, 0.7, 1));
+  await wait(900);
+  if (game.active) swapMesh(monitor, monitorScreen());
+}
+const refreshMonitor = () => { if (game.active && !monitor.hidden) swapMesh(monitor, monitorScreen()); };
+function openMonitor() {
+  const m = MONITOR[monitorMode()];
+  const lines = m.log.map((text) => ({ label: () => text, act: null, selfLit: true, style: { color: "#1d2c5e" } }));
+  lines.push({ label: () => "< BACK", act: () => closeCard(), keep: true });
+  spawnCard({
+    kind: "monitor", title: "BAY CAM 2  -  LOG", lines, from: monitor.light,
+    anchor: CAM.pos.clone().lerp(monitor.light, 0.3).addScaledVector(CAM.up, -0.02),
+  });
+}
+function takeCard() {
+  game.hasCard = true;
+  show(cardProp, false);
+  pulseFrom(cardProp.light, new V3(1, 0.9, 0.6));
+  const lines = [
+    "NAME ........ R. PATTERSON", "WEEK ENDING .. 11/20/26", "MON-THU  ....  7:00 - 4:30", "FRI  ........  7:04 - __:__",
+    { text: "FILE IN RACK  -  SLOT: ?", note: true },
+  ].map((L) => ({ label: () => L.text ?? L, act: null, selfLit: true, style: L.note ? { color: "#8f1710" } : undefined }));
+  lines.push({ label: () => "< KEEP IT", act: () => closeCard(), keep: true });
+  spawnCard({
+    kind: "timecard", title: "TIME CARD", lines, from: cardProp.light,
+    anchor: CAM.pos.clone().lerp(cardProp.light, 0.5).addScaledVector(CAM.up, 0.12).addScaledVector(CAM.right, -0.1),
+    onClose: () => { refreshMonitor(); setHint(); },
+  });
+}
+function openWorkOrder(c) {
+  c.open = true;
+  const lines = c.lines.map((L, k) => ({
+    label: () => L.text ?? L, act: null, selfLit: true, y: 0.045 - k * 0.023,
+    style: L.note ? { color: "#8f1710", heightM: 0.022 } : { heightM: 0.022 },
+  }));
+  lines.push({ label: () => "< HANG IT BACK", act: () => closeCard(), keep: true, y: -0.088, x: 0.07, w: 0.15, style: { widthM: 0.15, heightM: 0.022 } });
+  spawnCard({
+    kind: "workorder", title: `WORK ORDER ${c.no}`, lines, from: c.center.clone().addScaledVector(c.dir, 0.09),
+    anchor: CAM.pos.clone().lerp(c.center, 0.42).addScaledVector(CAM.up, 0.1),
+    onClose: () => {
+      c.open = false;
+      if (c.rp && !game.readRP) { game.readRP = true; refreshMonitor(); }
+    },
+  });
+}
+function sitDown() { anim.seatTarget = 1; setHint(); }
+function standUp() { anim.seatTarget = 0; setHint(); }
+function trySlot(n, at) {
+  if (!game.hasCard) { pulseFrom(at, new V3(0.7, 0.7, 0.7)); flashHint(`Slot ${n} is empty. Time cards go here.`); return; }
+  if (n !== SLOT) {
+    game.penalty += 15000;
+    pulseFrom(at, new V3(1, 0.25, 0.2));
+    flashHint("Wrong slot - that's not R.P.'s.  +15 s");
+    return;
+  }
+  fileCard(at);
+}
+async function fileCard(at) {
+  state = "busy";
+  anim.seatTarget = 0;
+  // the card leaves your hand and slides into the slot
+  const g = new THREE.Group();
+  const fx = textEffects("plain");
+  const m = T.timeCard();
+  m.objectModifier = fx.modifier;
+  g.add(m);
+  worldRoot.add(g);
+  const rack = planeFrame(655, 1330, 785, 1600);
+  const from = CAM.pos.clone().lerp(at, 0.35).addScaledVector(CAM.up, -0.05);
+  const to = at.clone().addScaledVector(rack.normal, 0.02);
+  const q0 = new THREE.Quaternion().setFromRotationMatrix(new THREE.Matrix4().makeBasis(CAM.right, CAM.up, CAM.fwd.clone().negate()));
+  const q1 = new THREE.Quaternion().setFromRotationMatrix(new THREE.Matrix4().makeBasis(rack.right, rack.normal.clone().negate(), rack.up));
+  fx.uniforms.reveal.value = 1;
+  await tween(1000, (x) => {
+    const e = ease(x);
+    g.position.lerpVectors(from, to, e);
+    g.quaternion.slerpQuaternions(q0, q1, e);
+    fx.uniforms.time.value = t;
+    fx.uniforms.reveal.value = 1 - Math.max(0, x - 0.75) / 0.25;
+    m.updateVersion();
+  });
+  worldRoot.remove(g);
+  m.dispose?.();
+  pulseFrom(at, new V3(1, 0.85, 0.4));
+  winGame();
+}
+
+async function startGame() {
+  state = "busy";
+  const it = items.find((i) => i.id === "new");
+  drawerFrames[0].target = 0.12;
+  pulseFrom(it.light, new V3(1, 0.4, 0.3));
+  signRig.vel += 2.5;
+  await wait(500);
+  await tween(1800, (x) => { anim.dissolve = ease(x) * 0.75; });
+  // swap the menu for the game while the room is in pieces
+  items.forEach((i) => { if (i.layer === "main" && i !== crt) i.revealTarget = 0; });
+  Object.assign(game, GAME_RESET, { active: true });
+  show(lockTape, true); show(cardProp, false); show(monitor, false);
+  crt.layer = "play";
+  crt.onSelect = () => openKeypad();
+  swapMesh(crt, gameScreen());
+  await wait(250);
+  await tween(2200, (x) => { anim.dissolve = 0.75 * (1 - ease(x)); });
+  drawerFrames[0].target = 0;
+  // the tube light dies
+  for (const lvl of [0.4, 1, 0.25, 0.85, 0.12, 0.55]) { anim.light = lvl; await wait(70 + Math.random() * 130); }
+  await tween(900, (x) => { anim.light = lerp(0.5, DARK, ease(x)); anim.torch = ease(x); });
+  game.t0 = performance.now();
+  state = "play";
+  setHint();
+}
+async function winGame() {
+  state = "busy";
+  game.won = true;
+  const ms = performance.now() - game.t0 + game.penalty;
+  const best = readBest();
+  if (!best || ms < best) saveBest(ms);
+  swapMesh(crt, gameScreen("won"));
+  show(monitor, false);
+  await wait(900);
+  await tween(1800, (x) => { anim.light = lerp(DARK, 1, ease(x)); anim.torch = 1 - ease(x); });
+  winWords = T.glowWords(`CLOCKED OUT  -  ${fmtTime(ms)}`, { widthM: 1.3, heightM: 0.2 });
+  winWords.objectModifier = winFx.modifier;
+  winWords.position.copy(endWords.position);
+  winWords.quaternion.copy(endWords.quaternion);
+  worldRoot.add(winWords);
+  winFx.uniforms.reveal.value = 0;
+  await tween(1500, (x) => (winFx.uniforms.reveal.value = ease(x)));
+  state = "ended";
+  const record = !best || ms < best ? "New best time" : `Best ${fmtTime(best)}`;
+  const extra = game.penalty ? ` (incl. +${game.penalty / 1000} s for wrong slots)` : "";
+  ui.hint.textContent = `${record}${extra} · ${renderer.xr.isPresenting ? "Pull the trigger to return" : NO_HOVER ? "Tap to return" : "Click or press Enter to return"}`;
+}
+async function leaveGame() {
+  state = "busy";
+  closeCard(true);
+  anim.seatTarget = 0;
+  if (winWords) {
+    await tween(700, (x) => (winFx.uniforms.reveal.value = 1 - x));
+    worldRoot.remove(winWords);
+    winWords.dispose?.();
+    winWords = null;
+  }
+  Object.assign(game, GAME_RESET, { active: false });
+  show(cardProp, false); show(monitor, false);
+  crt.layer = "main";
+  crt.onSelect = () => doContinue();
+  swapMesh(crt, crtLines("idle"));
+  drawerFrames.forEach((d) => (d.target = 0));
+  const l0 = anim.light, t0 = anim.torch;
+  await tween(900, (x) => { anim.light = lerp(l0, 1, ease(x)); anim.torch = t0 * (1 - ease(x)); });
+  items.forEach((i) => { if (i.layer === "main") i.revealTarget = 1; });
+  cursorRoom.target = 0;
+  state = "main";
+  setHint();
 }
 
 // ------------------------------------------------------------------ input: pointer / keys / gamepad
@@ -521,7 +1066,7 @@ function pickFromRay(origin, dir) {
   const o = origin.clone().applyMatrix4(inv);
   const d = dir.clone().transformDirection(inv);
   const rp = roomHit(o, d);
-  if (rp) { cursorRoom.pos.copy(rp); cursorRoom.target = settings.pointerLight ? 1 : 0; } else cursorRoom.target = 0;
+  if (rp) { cursorRoom.pos.copy(rp); cursorRoom.target = settings.pointerLight || game.active ? 1 : 0; } else cursorRoom.target = 0;
   if (!hit) return { item: null, point: rp, sign: false };
   if (hit.object.userData.sign) return { item: null, point: rp, sign: true };
   return { item: hit.object.userData.item, point: rp, sign: false, distance: hit.distance };
@@ -557,11 +1102,12 @@ function endTouch(e, tapped) {
   touch.id = null;
   touch.lastUp = performance.now();
   pointer.active = false;
-  if (!tapped || touch.dragged) { cursorRoom.target = 0; hovered = null; return; }
+  // in the game the torch stays where the finger left it
+  if (!tapped || touch.dragged) { if (!game.active) cursorRoom.target = 0; hovered = null; return; }
   setNdc(e);
   raycaster.setFromCamera(pointer.ndc, camera);
   const res = pickFromRay(raycaster.ray.origin.clone(), raycaster.ray.direction.clone());
-  cursorRoom.target = 0;
+  if (!game.active) cursorRoom.target = 0;
   if (state === "ended") return unQuit();
   if (res.item) { hovered = res.item; select(res.item); } else if (res.sign) swingSign();
   // let the glow linger a moment after the finger lifts
@@ -586,6 +1132,13 @@ function navigate(dir) {
   if (!renderer.xr.isPresenting && !card?.near) lookToward(hovered.light ?? hovered.group.getWorldPosition(new V3()));
 }
 addEventListener("keydown", (e) => {
+  // digits type straight into the terminal during the game
+  if (/^[0-9]$/.test(e.key) && game.active && game.step < CODES.length && (state === "play" || card?.kind === "keypad")) {
+    if (!card) openKeypad();
+    keypadPress(e.key);
+    return;
+  }
+  if (e.key === "Backspace" && card?.kind === "keypad") { keypadDelete(); e.preventDefault(); return; }
   if (["ArrowUp", "w", "W"].includes(e.key)) { navigate(-1); e.preventDefault(); }
   else if (["ArrowDown", "s", "S", "Tab"].includes(e.key)) { navigate(e.shiftKey && e.key === "Tab" ? -1 : 1); e.preventDefault(); }
   else if (["Enter", " "].includes(e.key)) { if (state === "ended") unQuit(); else select(hovered); e.preventDefault(); }
@@ -630,7 +1183,7 @@ const controllers = [0, 1].map((i) => {
   scene.add(c);
   return ctl;
 });
-let needRecenter = 0;
+let needRecenter = 0, xrBase = null;
 function recenter() { needRecenter = 2; }
 function applyRecenter() {
   // put the photo's camera exactly where the viewer's head is, facing the same way (yaw only)
@@ -643,6 +1196,7 @@ function applyRecenter() {
   worldRoot.rotation.set(0, yaw - photoYaw, 0);
   const rotated = CAM.pos.clone().applyQuaternion(worldRoot.quaternion);
   worldRoot.position.copy(head).sub(rotated);
+  xrBase = worldRoot.position.clone();
   worldRoot.updateMatrixWorld(true);
 }
 const xr = new SparkXr({
@@ -654,7 +1208,7 @@ const xr = new SparkXr({
     ui.vr.style.display = ok || !NO_HOVER ? "" : "none";   // phones without VR don't need the button
   },
   onEnterXr: () => { ui.vr.textContent = "EXIT VR"; needRecenter = 12; spark.apertureAngle = 0; xrHint.visible = true; setHint(); },
-  onExitXr: () => { ui.vr.textContent = "ENTER VR"; worldRoot.position.set(0, 0, 0); worldRoot.rotation.set(0, 0, 0); xrHint.visible = false; setHint(); },
+  onExitXr: () => { ui.vr.textContent = "ENTER VR"; xrBase = null; worldRoot.position.set(0, 0, 0); worldRoot.rotation.set(0, 0, 0); xrHint.visible = false; setHint(); },
 });
 
 function updateXrInput() {
@@ -750,23 +1304,42 @@ function updateDesktopCamera(dt) {
   desk.lean.x = damp(desk.lean.x, leanTarget.x, 2.5, dt);
   desk.lean.y = damp(desk.lean.y, leanTarget.y, 2.5, dt);
   desk.lean.z = damp(desk.lean.z, leanTarget.z, 2.5, dt);
+  const se = ease(clamp(anim.seat, 0, 1)), ze = ease(clamp(zoom.amt, 0, 1)), free = (1 - se) * (1 - ze);
   camera.position.copy(CAM.pos)
-    .addScaledVector(CAM.right, desk.look.x * 0.07)
-    .addScaledVector(CAM.up, desk.look.y * 0.045)
-    .add(desk.lean);
+    .addScaledVector(CAM.right, desk.look.x * 0.07 * free)
+    .addScaledVector(CAM.up, desk.look.y * 0.045 * free)
+    .addScaledVector(desk.lean, free)
+    .addScaledVector(SEAT, se);
   const aim = unproject(view.u[0] + desk.look.x * view.u[1], view.v[0] - desk.look.y * view.v[1], 3.0);
   if (anim.push > 0) aim.lerp(crt.light, anim.push * 0.6);
+  if (se > 0 && digit) aim.lerp(digit.target, se * 0.35);
+  if (ze > 0) aim.lerp(zoom.aim, ze);
   camera.up.copy(CAM.up);
   camera.lookAt(aim);
   // depth of field focuses on the hovered object, or the open card
   const focusDist = hovered && !card ? camera.position.distanceTo(hovered.light ?? hovered.group.position)
     : card ? camera.position.distanceTo(card.group.position) : 2.4;
   spark.focalDistance = damp(spark.focalDistance || 2.4, focusDist, 4, dt);
-  spark.apertureAngle = settings.dof ? 0.0012 : 0;
+  spark.apertureAngle = settings.dof && se < 0.3 ? 0.0012 : 0;
 }
 
 // ------------------------------------------------------------------ hints
 function setHint() {
+  if (game.active && !game.won && anim.seatTarget) {
+    ui.hint.textContent = `Sitting in R.P.'s chair · ${renderer.xr.isPresenting ? "lean around · B" : NO_HOVER ? "tap the chair" : "click the chair or press Esc"} to stand up`;
+    return;
+  }
+  if (game.active && !game.won && game.hasCard) {
+    ui.hint.textContent = renderer.xr.isPresenting ? "You have R.P.'s time card · file it in the right rack slot · B to leave"
+      : "You have R.P.'s time card · file it in the right slot on the rack · Esc leaves";
+    return;
+  }
+  if (game.active && !game.won) {
+    ui.hint.textContent = renderer.xr.isPresenting ? "The power's out · point to shine the torch · trigger to use · B to leave"
+      : NO_HOVER ? "The power's out · drag to shine the torch · tap things to use them"
+        : "The power's out · the mouse is your torch · click things · type digits at the terminal · Esc leaves";
+    return;
+  }
   ui.hint.textContent = renderer.xr.isPresenting
     ? "Point and pull the trigger · thumbstick to browse · grip to recenter"
     : IS_QUEST ? "Press ENTER VR, then point and pull the trigger"
@@ -814,8 +1387,73 @@ function flickerLevel(dt) {
   return 1;
 }
 
+// ------------------------------------------------------------------ terminal rim motes
+// While the terminal floats up to be read, copies of the gaussians along its outline come alive:
+// streaming round the rim, coiling round the bezel and peeling off as embers (rimEffects).
+const CRT_OUTLINE = [[356, 927], [400, 869], [567, 865], [592, 996], [380, 1046], [372, 1046]];   // outer outline of CRT_QUADS
+const CRT_DEPTH = [2.15, 2.95];
+const rim = { fx: null, mesh: null, amt: 0, clock: 0 };
+function buildRim() {
+  const outline = outlineSegments(CRT_OUTLINE);
+  const edge = (a, b, p) => (b[0] - a[0]) * (p[1] - a[1]) - (b[1] - a[1]) * (p[0] - a[0]);
+  const inQuad = (p, q) => {
+    const e = [0, 1, 2, 3].map((k) => edge(q[k], q[(k + 1) % 4], p));
+    return e.every((x) => x >= 0) || e.every((x) => x <= 0);
+  };
+  const BAND = 15;   // px inside the outline
+  const BINS = 96;   // depth profile round the outline
+  const bins = Array.from({ length: BINS }, () => []);
+  const picked = [];
+  const d = new V3();
+  roomMesh.packedSplats.forEachSplat((i, c, s, q, o, color) => {
+    if (o < 0.05) return;
+    d.subVectors(c, CAM.pos);
+    const z = d.dot(CAM.fwd);
+    if (z < CRT_DEPTH[0] || z > CRT_DEPTH[1]) return;
+    const p = [(F * d.dot(CAM.right)) / z + PW / 2, (F * d.dot(CAM.down)) / z + PH / 2];
+    if (p[0] < 340 || p[0] > 610 || p[1] < 850 || p[1] > 1060) return;
+    if (!CRT_QUADS.some((qd) => inQuad(p, qd))) return;
+    const near = outlineNearest(outline, p);
+    if (near.d > BAND) return;
+    if (near.d < 8 && o > 0.4) bins[Math.floor((near.s / outline.per) * BINS) % BINS].push(z);
+    picked.push({ c: c.clone(), s: s.clone(), q: q.clone(), o, color: color.clone() });
+  });
+  // near-surface depth per bin (20th percentile: the rim's own edge, not the wall the build snapped behind it);
+  // empty bins borrow from the nearest filled neighbour
+  const med = bins.map((b) => (b.length ? b.sort((x, y) => x - y)[Math.floor(b.length * 0.2)] : NaN));
+  const depth = med.map((v, k) => {
+    for (let r = 0; Number.isNaN(v) && r < BINS / 2; r++) v = [med[(k + r) % BINS], med[(k - r + BINS) % BINS]].find((x) => !Number.isNaN(x)) ?? NaN;
+    return Number.isNaN(v) ? (CRT_DEPTH[0] + CRT_DEPTH[1]) / 2 : v;
+  });
+  const fx = rimEffects({ cam: { pos: CAM.pos, right: CAM.right, down: CAM.down, fwd: CAM.fwd, focal: F, width: PW, height: PH }, poly: CRT_OUTLINE, depth });
+  // keep it light: a capped random sample, plus pure phosphor sparks seeded on the rim
+  const cap = TIER === "quest" ? 2200 : 5500;
+  let seed = 11;
+  const r = () => ((seed = (seed * 16807) % 2147483647) / 2147483647);
+  for (let k = picked.length - 1; k > 0; k--) { const j = Math.floor(r() * (k + 1)); [picked[k], picked[j]] = [picked[j], picked[k]]; }
+  const keep = picked.slice(0, cap);
+  const sparks = picked.length ? (TIER === "quest" ? 160 : 350) : 0;
+  const mesh = new SplatMesh({
+    constructSplats: (splats) => {
+      for (const p of keep) splats.pushSplat(p.c, p.s, p.q, p.o, p.color);
+      const green = new THREE.Color(0.45, 1, 0.6), sc = new V3(), q0 = new THREE.Quaternion();
+      for (let k = 0; k < sparks; k++) {
+        const src = keep[Math.floor(r() * keep.length)];
+        sc.setScalar(0.0008 + r() * 0.0012);
+        splats.pushSplat(src.c, sc, q0, 0.6 + r() * 0.4, green);
+      }
+    },
+  });
+  mesh.objectModifier = fx.modifier;
+  mesh.visible = false;
+  worldRoot.add(mesh);
+  Object.assign(rim, { fx, mesh, count: keep.length + sparks, found: picked.length });
+}
+
 // ------------------------------------------------------------------ boot
 buildMenu();
+buildGame();
+buildRim();
 room.uniforms.introOrigin.value.copy(crt.light);
 setHint();
 ui.loading.classList.add("done");
@@ -829,6 +1467,7 @@ function frame() {
   t += dt;
   const inXr = renderer.xr.isPresenting;
   signHover = false;
+  if (inXr && xrBase) worldRoot.position.copy(xrBase).addScaledVector(SEAT.clone().applyQuaternion(worldRoot.quaternion), -ease(clamp(anim.seat, 0, 1)));
   worldRoot.updateMatrixWorld(true);
 
   // intro sequence
@@ -843,7 +1482,7 @@ function frame() {
   // input
   pollGamepads();
   if (inXr) updateXrInput();
-  else if (pointer.active && (state === "main" || state === "card" || state === "ended")) {
+  else if (pointer.active && (state === "main" || state === "card" || state === "play" || state === "ended")) {
     raycaster.setFromCamera(pointer.ndc, camera);
     const res = pickFromRay(raycaster.ray.origin.clone(), raycaster.ray.direction.clone());
     if (inputMode === "pointer" || (inputMode === "touch" && !touch.dragged)) hovered = res.item;
@@ -851,17 +1490,20 @@ function frame() {
     document.body.style.cursor = res.item || res.sign ? "pointer" : "default";
   }
   if (hovered && !pickables().includes(hovered)) hovered = null;
+  // keyboard / gamepad players: the torch jumps to whatever is selected
+  if (game.active && inputMode === "keys" && hovered?.torchAt) { cursorRoom.pos.copy(hovered.torchAt); cursorRoom.target = 1; }
   if (!inXr) updateDesktopCamera(dt);
   else for (const c of controllers) c.line.visible = !!c.obj.userData.source && c.obj.userData.source.targetRayMode !== "screen";
 
   // item animation
   for (const i of items) {
+    if (i.layer === "play" && i !== crt) i.revealTarget = game.active && !i.hidden ? (i.hoverReveal ? (i === hovered ? 1 : 0) : 1) : 0;
     i.hover = damp(i.hover, i === hovered ? 1 : 0, 9, dt);
     i.press = damp(i.press, 0, 5, dt);
     i.reveal = damp(i.reveal, i.revealTarget, 2.2, dt);
     const u = i.fx.uniforms;
     u.time.value = t; u.hover.value = i.hover; u.press.value = i.press; u.reveal.value = i.reveal;
-    u.light.value = (i.enabled ? 1 : 0.55) * (i.id === "continue" ? 1 : anim.light * 0.85 + 0.15);
+    u.light.value = (i.enabled || i.selfLit ? 1 : 0.55) * (i.id === "continue" || i.selfLit || i.layer === "card" ? 1 : anim.light * 0.85 + 0.15);
     i.mesh.updateVersion();
   }
   // drawers slide (hover nudges the drawer open a little, selection opens it)
@@ -899,7 +1541,53 @@ function frame() {
   R.pulse.value.set(anim.pulseOrigin.x, anim.pulseOrigin.y, anim.pulseOrigin.z, anim.pulseAge);
   R.dissolve.value = anim.dissolve;
   R.light.value = lightLvl;
+  R.torch.value.set(anim.torch * 1.8, 0.06, 0, 0);
   roomMesh.updateVersion();
+  if (ink) {
+    ink.reveal = damp(ink.reveal, game.active ? 1 : 0, 3, dt);
+    const lp = cursorRoom.pos.clone().applyMatrix4(ink.inv);
+    ink.fx.uniforms.cursor.value.set(lp.x, lp.y, lp.z, cursorRoom.amt * anim.torch);
+    ink.fx.uniforms.time.value = t;
+    ink.fx.uniforms.reveal.value = ink.reveal;
+    ink.mesh.visible = ink.reveal > 0.01;
+    if (ink.mesh.visible) ink.mesh.updateVersion();
+  }
+  // clipboards float out of the photo when hovered / read
+  clips.forEach((c) => {
+    c.amt = damp(c.amt, game.active ? (c.open ? 1 : c.item === hovered ? 0.2 : 0) : 0, 5, dt);
+    c.lift.o.value.set(c.dir.x * 0.09 * c.amt, c.dir.y * 0.09 * c.amt + 0.01 * c.amt, c.dir.z * 0.09 * c.amt, Math.min(1, c.amt * 1.4));
+  });
+  // the terminal floats up to you while the keypad is open
+  zoom.amt = damp(zoom.amt, zoom.target, 3.2, dt);
+  {
+    const ze = ease(clamp(zoom.amt, 0, 1)), off = zoom.off.clone().multiplyScalar(ze);
+    CRT_QUADS.forEach((_, k) => room.uniforms.lifts[CRT_LIFT + k].o.value.set(off.x, off.y, off.z, 0.55 * ze));
+    crt.group.position.copy(crt.basePos).add(off);
+    // rim motes: their own clock runs while in focus, and restarts once they have faded away
+    rim.amt = damp(rim.amt, zoom.target ? ze : 0, zoom.target ? 2 : 4, dt);
+    rim.clock = rim.amt < 0.002 && !zoom.target ? 0 : rim.clock + dt * (0.35 + 0.65 * ze);
+    rim.mesh.visible = rim.amt > 0.002;
+    if (rim.mesh.visible) {
+      const u = rim.fx.uniforms;
+      u.time.value = t; u.clock.value = rim.clock; u.rim.value = rim.amt; u.light.value = lightLvl;
+      u.off.value.copy(off);
+      rim.mesh.updateVersion();
+    }
+  }
+  // R.P.'s chair: the dust digit lines up as your eye reaches his seat
+  anim.seat = damp(anim.seat, game.active && state !== "ended" ? anim.seatTarget : 0, 2.4, dt);
+  if (digit) {
+    digit.reveal = damp(digit.reveal, game.active && !game.won && !card ? 1 : 0, card ? 6 : 2, dt);   // out of the way of hand-held cards
+    const eye = (inXr ? new V3().setFromMatrixPosition(renderer.xr.getCamera().matrixWorld) : camera.position.clone());
+    worldRoot.worldToLocal(eye);
+    digit.align = 1 - THREE.MathUtils.smoothstep(eye.distanceTo(digit.eye), 0.02, 0.1);
+    if (digit.align > 0.8 && game.active && !game.sawDigit) { game.sawDigit = true; refreshMonitor(); }
+    const u = digit.fx.uniforms;
+    u.time.value = t; u.reveal.value = digit.reveal; u.align.value = digit.align;
+    digit.mesh.visible = digit.reveal > 0.01;
+    if (digit.mesh.visible) digit.mesh.updateVersion();
+  }
+  if (winWords) { winFx.uniforms.time.value = t; winWords.updateVersion(); }
   dust.uniforms.time.value = t;
   dust.uniforms.light.value = lightLvl;
   dustMesh.updateVersion();
@@ -917,6 +1605,6 @@ if (params.has("drive")) setInterval(() => { if (!renderer.xr.isPresenting) fram
 // test / debug hooks
 window.__menu = {
   get state() { return state; }, get hovered() { return hovered?.id ?? null; }, items, select: (id) => select(items.find((i) => i.id === id)),
-  navigate, back, tier: TIER, splats: roomMesh.packedSplats?.numSplats, project, surface,
-  settings, spark, signRig, camera, room, anim, xrHint, view, desk, get pixelRatio() { return pixelRatio; },
+  navigate, back, tier: TIER, game, startGame, ink, clips, digit, sitDown, standUp, splats: roomMesh.packedSplats?.numSplats, project, surface,
+  settings, spark, signRig, camera, room, anim, zoom, rim, xrHint, view, desk, get pixelRatio() { return pixelRatio; },
 };
