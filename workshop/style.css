@@ -1,0 +1,52 @@
+:root {
+  color-scheme: dark;
+  font-family: "Segoe UI", system-ui, sans-serif;
+  color: #fbf3df;
+  background: #1f1c18;
+}
+body { margin: 0; }
+canvas { position: fixed; inset: 0; width: 100%; height: 100%; touch-action: none; cursor: grab; }
+canvas:active { cursor: grabbing; }
+header, .controls { position: fixed; max-width: calc(100vw - 3rem); }
+header {
+  inset: 0 0 auto;
+  max-width: none;
+  padding: 1.3rem 1.5rem 3rem;
+  background: linear-gradient(180deg, #1b1713e8, #1b171300);
+  pointer-events: none;
+}
+h1 { font: 400 clamp(2rem, 5vw, 3.7rem)/1 Georgia, serif; margin: .6rem 0 .35rem; }
+p { margin: .5rem 0; }
+#status:empty { display: none; }
+a { color: inherit; text-underline-offset: .2em; }
+.studio-link { pointer-events: auto; }
+.studio-link + .studio-link { margin-inline-start: 1rem; }
+.controls {
+  inset: auto auto 1.5rem 1.5rem;
+  box-sizing: border-box;
+  width: max-content;
+  max-width: min(30rem, calc(100vw - 3rem));
+  padding: .8rem 1rem;
+  background: #221e18ef;
+  border: 1px solid #847557;
+  border-radius: .65rem;
+  font-size: .875rem;
+}
+.buttons { display: flex; gap: .5rem; flex-wrap: wrap; }
+button {
+  border: 1px solid #a99b7c;
+  border-radius: .35rem;
+  padding: .45rem .75rem;
+  min-height: 2.5rem;
+  font: inherit;
+  background: #332c20;
+  color: inherit;
+  cursor: pointer;
+}
+#vr:enabled { color: #2c2315; background: #f2daa2; }
+button:disabled { opacity: .62; cursor: default; }
+summary { cursor: pointer; }
+details p { line-height: 1.45; }
+@media (max-height: 440px) {
+  .controls { inset: auto 1rem .65rem auto; }
+}

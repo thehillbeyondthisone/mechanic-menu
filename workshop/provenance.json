@@ -1,0 +1,35 @@
+{
+  "id": "finished-workshop",
+  "representation": "Static Gaussian environment",
+  "source": {
+    "filename": "splat_600.ply",
+    "bytes": 136000654,
+    "sha256": "2f2075bd84b71b6e3da3d22fe651bbb896c3647a25ddfc517b4e976641a5f4cb",
+    "gaussians": 2000000,
+    "centerBounds": {
+      "min": [-45.213135, -13.302979, -67.786377],
+      "max": [68.325684, 1.864746, 51.778809]
+    },
+    "exportId": "6001a878-854e-413e-919a-a75c6228f577",
+    "iteration": 600,
+    "strategy": "mrnf",
+    "application": "LichtFeld v0.5.4-3-g6c18c40",
+    "buildCommit": "6c18c40",
+    "exportedAt": "2026-11-18T23:10:02Z"
+  },
+  "display": {
+    "filename": "workshop.spz",
+    "bytes": 46948544,
+    "sha256": "6c00b4385a2f5ebd6d2603dc5f2e040fdb697cadb9d3598f357b8c7462d29396",
+    "format": "Spark SPZ v3 with embedded Tiny LOD",
+    "hierarchyNodes": 2744592,
+    "lodBase": 1.5,
+    "positionFractionalBits": 12,
+    "sphericalHarmonicDegree": 0,
+    "worldRotationXDegrees": 180,
+    "worldScale": 1,
+    "worldTranslation": [0, 0, 0],
+    "desktopLodTarget": 360000,
+    "touchPreviewAndVrLodTarget": 220000
+  }
+}

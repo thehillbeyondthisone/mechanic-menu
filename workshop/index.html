@@ -1,0 +1,35 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Finished Workshop</title>
+  <link rel="icon" href="data:,">
+  <link rel="stylesheet" href="./style.css">
+  <script type="importmap">
+    {"imports":{"three":"../studio/vendor/three.module.js","three/addons/":"../studio/vendor/addons/","workshop-spark":"../studio/vendor/spark.module.js"}}
+  </script>
+</head>
+<body>
+  <canvas id="room" aria-label="Finished Workshop. Drag to look and use WASD to walk."></canvas>
+  <header>
+    <a class="studio-link" href="../">← The Workshop menu</a>
+    <a class="studio-link" href="../studio/">← Splat Studio</a>
+    <h1>Finished Workshop</h1>
+    <p id="status" role="status">Loading workshop…</p>
+  </header>
+  <section class="controls" aria-label="Workshop controls">
+    <p>Drag to look · WASD to walk</p>
+    <div class="buttons">
+      <button id="vr" disabled>Enter VR</button>
+      <button id="reset" disabled>Return to start</button>
+    </div>
+    <p id="vr-help" role="status">Checking WebXR…</p>
+    <details>
+      <summary>About the room</summary>
+      <p>Static LichtFeld Gaussian scene · 2,000,000 source Gaussians.<br>Walking is limited to the central floor area.<br><a href="./provenance.json">Source and display details</a></p>
+    </details>
+  </section>
+  <script type="module" src="./workshop.js"></script>
+</body>
+</html>
