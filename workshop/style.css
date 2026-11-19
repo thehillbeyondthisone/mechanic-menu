@@ -2,51 +2,143 @@
   color-scheme: dark;
   font-family: "Segoe UI", system-ui, sans-serif;
   color: #fbf3df;
-  background: #1f1c18;
+  background: #211b16;
+  --left: max(1rem, env(safe-area-inset-left));
+  --right: max(1rem, env(safe-area-inset-right));
+  --top: max(1rem, env(safe-area-inset-top));
+  --bottom: max(1rem, env(safe-area-inset-bottom));
+  --panel: #211b16f4;
+  --line: #e7c99566;
+  --accent: #f2daa2;
 }
-body { margin: 0; }
-canvas { position: fixed; inset: 0; width: 100%; height: 100%; touch-action: none; cursor: grab; }
-canvas:active { cursor: grabbing; }
-header, .controls { position: fixed; max-width: calc(100vw - 3rem); }
-header {
-  inset: 0 0 auto;
-  max-width: none;
-  padding: 1.3rem 1.5rem 3rem;
-  background: linear-gradient(180deg, #1b1713e8, #1b171300);
+
+*, *::before, *::after { box-sizing: border-box; }
+[hidden] { display: none !important; }
+body { margin: 0; overflow: hidden; }
+#room { position: fixed; inset: 0; width: 100%; height: 100%; touch-action: none; cursor: grab; }
+#room:active { cursor: grabbing; }
+
+.topbar, .bottom-bar {
+  position: fixed;
+  inset-inline: 0;
+  display: flex;
+  justify-content: space-between;
+  gap: 1rem;
   pointer-events: none;
 }
-h1 { font: 400 clamp(2rem, 5vw, 3.7rem)/1 Georgia, serif; margin: .6rem 0 .35rem; }
-p { margin: .5rem 0; }
-#status:empty { display: none; }
-a { color: inherit; text-underline-offset: .2em; }
-.studio-link { pointer-events: auto; }
-.studio-link + .studio-link { margin-inline-start: 1rem; }
-.controls {
-  inset: auto auto 1.5rem 1.5rem;
-  box-sizing: border-box;
-  width: max-content;
-  max-width: min(30rem, calc(100vw - 3rem));
-  padding: .8rem 1rem;
-  background: #221e18ef;
-  border: 1px solid #847557;
-  border-radius: .65rem;
-  font-size: .875rem;
+.topbar {
+  top: 0;
+  padding: var(--top) var(--right) 2.5rem var(--left);
+  background: linear-gradient(180deg, #211b16ed, #211b1699 45%, transparent);
 }
-.buttons { display: flex; gap: .5rem; flex-wrap: wrap; }
-button {
-  border: 1px solid #a99b7c;
-  border-radius: .35rem;
-  padding: .45rem .75rem;
-  min-height: 2.5rem;
-  font: inherit;
-  background: #332c20;
+h1 { font: 400 clamp(1.8rem, 4.6vw, 3.5rem)/1 Georgia, serif; margin: .5rem 0 0; }
+a { color: inherit; text-underline-offset: .2em; }
+.studio-link { pointer-events: auto; font-size: .86rem; }
+.actions { display: flex; flex-wrap: wrap; justify-content: end; align-content: start; gap: .5rem; }
+
+.bottom-bar {
+  bottom: 0;
+  align-items: flex-end;
+  padding: 0 var(--right) var(--bottom) var(--left);
+}
+.walk-tools { min-width: 0; }
+.walk-tools p { margin: .6rem 0 0; font-size: .8rem; text-shadow: 0 1px 4px #000, 0 1px 7px #000; }
+.touch-help, .walk-stick { display: none; }
+
+button, select, .settings > summary {
+  min-height: 2.75rem;
+  padding: .55rem .8rem;
+  border-radius: .5rem;
+  border: 1px solid var(--line);
+  background: var(--panel);
   color: inherit;
+  font: 600 .86rem/1.25 "Segoe UI", system-ui, sans-serif;
+  pointer-events: auto;
   cursor: pointer;
 }
-#vr:enabled { color: #2c2315; background: #f2daa2; }
-button:disabled { opacity: .62; cursor: default; }
-summary { cursor: pointer; }
-details p { line-height: 1.45; }
-@media (max-height: 440px) {
-  .controls { inset: auto 1rem .65rem auto; }
+button:disabled { opacity: .6; cursor: default; }
+:is(a, button, select, summary):focus-visible { outline: 2px solid var(--accent); outline-offset: 3px; }
+#vr:enabled { color: #2c2315; background: var(--accent); }
+
+.settings { position: relative; flex: none; pointer-events: auto; }
+.settings > summary { display: flex; align-items: center; gap: .5rem; list-style: none; }
+.settings > summary::-webkit-details-marker { display: none; }
+.settings > summary::before { content: "▸"; color: var(--accent); }
+.settings[open] > summary::before { content: "▾"; }
+.settings-body {
+  position: absolute;
+  right: 0;
+  bottom: calc(100% + .55rem);
+  width: min(19rem, calc(100vw - var(--left) - var(--right)));
+  max-height: min(68dvh, 28rem);
+  overflow: auto;
+  padding: .9rem;
+  background: var(--panel);
+  border: 1px solid var(--line);
+  border-radius: .7rem;
+  font-size: .85rem;
+  line-height: 1.45;
+}
+.settings-body label { display: block; margin-bottom: .35rem; font-weight: 600; }
+.settings-body select { display: block; width: 100%; background: #382b20; }
+.settings-body p { margin: .55rem 0; }
+#vr-help:empty { display: none; }
+.room-info { padding-top: .55rem; border-top: 1px solid var(--line); }
+.room-info summary { cursor: pointer; }
+
+.load-card {
+  position: fixed;
+  inset: 50% auto auto 50%;
+  width: min(24rem, calc(100% - 2rem));
+  transform: translate(-50%, -50%);
+  padding: 1rem 1.2rem;
+  border: 1px solid var(--line);
+  border-radius: .7rem;
+  background: var(--panel);
+}
+.load-card p { margin: 0 0 .65rem; }
+.load-card progress { display: block; width: 100%; accent-color: var(--accent); }
+
+@media (any-pointer: coarse) {
+  .desktop-help { display: none; }
+  .touch-help { display: block; }
+  .walk-stick {
+    position: relative;
+    display: grid;
+    place-items: center;
+    width: clamp(90px, 26vw, 122px);
+    aspect-ratio: 1;
+    border: 1px solid #f3ddadab;
+    border-radius: 50%;
+    background: #211b16c9;
+    touch-action: none;
+    user-select: none;
+    pointer-events: auto;
+  }
+  .walk-stick span { pointer-events: none; }
+  .stick-thumb {
+    width: 39%;
+    aspect-ratio: 1;
+    border: 1px solid #fae5b5;
+    border-radius: 50%;
+    background: #a48560;
+    transform: translate(var(--stick-x, 0), var(--stick-y, 0));
+  }
+  .stick-up, .stick-left, .stick-right, .stick-down { position: absolute; color: var(--accent); line-height: 1; }
+  .stick-up { top: 7%; }
+  .stick-down { bottom: 7%; }
+  .stick-left { left: 8%; }
+  .stick-right { right: 8%; }
+}
+
+@media (max-width: 580px) {
+  .topbar { flex-direction: column; gap: .6rem; }
+  .actions { justify-content: start; }
+  .actions button { padding-inline: .65rem; }
+}
+@media (max-height: 430px) {
+  .topbar { flex-direction: row; gap: .4rem; }
+  h1 { font-size: clamp(1.25rem, 4vw, 2rem); }
+  .walk-stick { width: 86px; }
+  .settings-body { max-height: 64dvh; }
 }

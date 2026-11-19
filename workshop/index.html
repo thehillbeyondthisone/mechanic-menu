@@ -2,34 +2,65 @@
 <html lang="en">
 <head>
   <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="theme-color" content="#211b16">
   <title>Finished Workshop</title>
   <link rel="icon" href="data:,">
-  <link rel="stylesheet" href="./style.css">
+  <link rel="stylesheet" href="./style.css?v=2">
   <script type="importmap">
     {"imports":{"three":"../studio/vendor/three.module.js","three/addons/":"../studio/vendor/addons/","workshop-spark":"../studio/vendor/spark.module.js"}}
   </script>
 </head>
 <body>
-  <canvas id="room" aria-label="Finished Workshop. Drag to look and use WASD to walk."></canvas>
-  <header>
-    <a class="studio-link" href="../">← The Workshop menu</a>
-    <a class="studio-link" href="../studio/">← Splat Studio</a>
-    <h1>Finished Workshop</h1>
-    <p id="status" role="status">Loading workshop…</p>
-  </header>
-  <section class="controls" aria-label="Workshop controls">
-    <p>Drag to look · WASD to walk</p>
-    <div class="buttons">
-      <button id="vr" disabled>Enter VR</button>
-      <button id="reset" disabled>Return to start</button>
+  <main>
+    <canvas id="room" aria-label="Finished Workshop. Drag to look. Use WASD, arrow keys, or the touch stick to walk."></canvas>
+  </main>
+  <header class="topbar">
+    <div>
+      <a class="studio-link" href="../">← The Workshop menu</a>
+      <h1>Finished Workshop</h1>
     </div>
-    <p id="vr-help" role="status">Checking WebXR…</p>
-    <details>
-      <summary>About the room</summary>
-      <p>Static LichtFeld Gaussian scene · 2,000,000 source Gaussians.<br>Walking is limited to the central floor area.<br><a href="./provenance.json">Source and display details</a></p>
+    <div class="actions">
+      <button id="reset" type="button" disabled>Return to start</button>
+      <button id="fullscreen" type="button" hidden>Fullscreen</button>
+      <button id="vr" type="button" hidden disabled>Enter VR</button>
+    </div>
+  </header>
+  <div class="load-card" id="loading">
+    <p id="status" role="status">Loading workshop…</p>
+    <progress id="progress" aria-label="Workshop download progress" max="100"></progress>
+    <button id="retry" type="button" hidden>Reload workshop</button>
+  </div>
+  <div class="bottom-bar" id="hud" hidden>
+    <div class="walk-tools">
+      <div class="walk-stick" id="walk-stick" aria-hidden="true">
+        <span class="stick-up">▴</span><span class="stick-left">‹</span>
+        <span class="stick-right">›</span><span class="stick-down">▾</span>
+        <span class="stick-thumb" id="stick-thumb"></span>
+      </div>
+      <p class="desktop-help">Drag to look · WASD or arrows to walk</p>
+      <p class="touch-help">Stick to walk · drag the room to look</p>
+    </div>
+    <details class="settings" id="settings">
+      <summary>Settings</summary>
+      <div class="settings-body">
+        <label for="quality">Scene detail</label>
+        <select id="quality" aria-describedby="quality-help">
+          <option value="smooth">Smooth</option>
+          <option value="balanced" selected>Balanced</option>
+          <option value="high">High</option>
+        </select>
+        <p id="quality-help"></p>
+        <p id="vr-help" role="status"></p>
+        <details class="room-info">
+          <summary>About the room</summary>
+          <p>Static LichtFeld scan with 2 million source Gaussians. Walking follows the central aisle.</p>
+          <p id="active-splats"></p>
+          <a href="./provenance.json">Source and display details</a>
+        </details>
+      </div>
     </details>
-  </section>
-  <script type="module" src="./workshop.js"></script>
+  </div>
+  <script type="module" src="./workshop.js?v=2"></script>
 </body>
 </html>
