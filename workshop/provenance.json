@@ -7,16 +7,8 @@
     "sha256": "2f2075bd84b71b6e3da3d22fe651bbb896c3647a25ddfc517b4e976641a5f4cb",
     "gaussians": 2000000,
     "centerBounds": {
-      "min": [
-        -45.213135,
-        -13.302979,
-        -67.786377
-      ],
-      "max": [
-        68.325684,
-        1.864746,
-        51.778809
-      ]
+      "min": [-45.213135, -13.302979, -67.786377],
+      "max": [68.325684, 1.864746, 51.778809]
     },
     "exportId": "6001a878-854e-413e-919a-a75c6228f577",
     "iteration": 600,
@@ -36,27 +28,22 @@
     "sphericalHarmonicDegree": 0,
     "worldRotationXDegrees": 180,
     "worldScale": 1,
-    "worldTranslation": [
-      0,
-      0,
-      0
-    ],
+    "worldTranslation": [0, 0, 0],
     "lodTargets": {
-      "smooth": {
-        "desktop": 360000,
-        "touchPreview": 250000,
-        "vr": 250000
-      },
-      "balanced": {
-        "desktop": 680000,
-        "touchPreview": 500000,
-        "vr": 500000
-      },
-      "high": {
-        "desktop": 1250000,
-        "touchPreview": 900000,
-        "vr": 850000
-      }
+      "smooth": { "desktop": 360000, "touchPreview": 250000, "vr": 250000 },
+      "balanced": { "desktop": 680000, "touchPreview": 500000, "vr": 500000 },
+      "high": { "desktop": 1250000, "touchPreview": 900000, "vr": 850000 }
     }
+  },
+  "fullDetail": {
+    "filename": "workshop-full.spz",
+    "bytes": 33219978,
+    "sha256": "e6910483cdf2aded4f559de29aa143c1a8b597eceac9828df65f930d5f0de781",
+    "format": "SPZ v3 with source Gaussians and no LOD hierarchy",
+    "gaussians": 2000000,
+    "positionFractionalBits": 12,
+    "sphericalHarmonicDegree": 0,
+    "usesDisplayWorldTransform": true,
+    "preview": "Flat view"
   }
 }
